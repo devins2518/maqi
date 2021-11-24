@@ -10,6 +10,7 @@ mod application;
 mod client;
 mod email;
 mod ui;
+mod utils;
 
 const APP_NAME: &str = "Maqi";
 

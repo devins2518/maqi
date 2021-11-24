@@ -1,5 +1,6 @@
 use std::{
     fmt::{self, Display},
+    io,
     net::TcpStream,
 };
 
@@ -19,6 +20,15 @@ pub struct ImapStream {
     stream: TcpStream,
     // Tag
     tag: Tag,
+}
+
+impl ImapStream {
+    pub fn new(addr: String) -> Result<Self, io::Error> {
+        Ok(Self {
+            stream: TcpStream::connect(addr)?,
+            tag: Tag::new(),
+        })
+    }
 }
 
 struct Tag {
