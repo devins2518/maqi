@@ -27,8 +27,9 @@ pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>, app: &mut application::
     frame.render_widget(mb_block, h_chunks[0]);
 
     let tabs_block = Block::default()
-        .title("")
-        .title_alignment(Alignment::Center)
+        // TODO: Remove
+        .title("─Tabs")
+        .title_alignment(Alignment::Left)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded);
     let tabs = Tabs::new(titles);
