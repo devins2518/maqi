@@ -7,6 +7,8 @@ use std::{error::Error, io};
 use tui::{backend::CrosstermBackend, Terminal};
 
 mod application;
+mod client;
+mod email;
 mod ui;
 
 const APP_NAME: &str = "Maqi";
