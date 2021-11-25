@@ -1,7 +1,8 @@
 use std::{
     fmt::{self, Display},
-    io,
+    io::{self, Write},
     net::TcpStream,
+    str::{self, FromStr},
 };
 
 /// TODO:
@@ -16,27 +17,43 @@ use std::{
 /// [ ] Selective fetching of message attrs, texts, and portions
 
 pub struct ImapStream {
-    // TCP Stream
     stream: TcpStream,
-    // Tag
-    tag: Tag,
+    tag: TagRepr,
+    state: State,
 }
 
 impl ImapStream {
     pub fn new(addr: String) -> Result<Self, io::Error> {
         Ok(Self {
             stream: TcpStream::connect(addr)?,
-            tag: Tag::new(),
+            tag: TagRepr::new(),
+            state: State::NotAuthenticated,
         })
+    }
+
+    pub fn init(&mut self, _user: &str, _pass: &str) {
+        todo!("TLS stuff");
+    }
+
+    pub fn send(&mut self, command: Command, body: &str) {
+        let c_str = COMMAND_STR[command as usize];
+        self.stream
+            .write(format!("{} {} {}", self.tag, c_str, body).as_bytes());
+        self.tag.inc()
     }
 }
 
-struct Tag {
+enum Tag {
+    Tag(TagRepr),
+    Continuation,
+}
+
+struct TagRepr {
     alpha: char,
     numeric: u16,
 }
 
-impl Tag {
+impl TagRepr {
     fn new() -> Self {
         Self {
             alpha: 'A',
@@ -58,7 +75,21 @@ impl Tag {
     }
 }
 
-impl Display for Tag {
+impl<T> From<T> for TagRepr
+where
+    T: AsRef<str>,
+{
+    fn from(s: T) -> Self {
+        let s = s.as_ref();
+        let c = s.as_bytes();
+        Self {
+            alpha: char::from(c[0]),
+            numeric: u16::from_str(str::from_utf8(&c[1..]).unwrap()).unwrap(),
+        }
+    }
+}
+
+impl Display for TagRepr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!("{}{:>04}", self.alpha, self.numeric))
     }
@@ -130,7 +161,7 @@ enum Command {
     UID,
 }
 
-const RESPONSE_STR: [&str; 38] = [
+const RESPONSE_CODE_STR: [&str; 38] = [
     "OK",
     "NO",
     "BAD",
@@ -171,12 +202,59 @@ const RESPONSE_STR: [&str; 38] = [
     "UNKNOWN-CTE",
 ];
 
-enum Response {
+enum ImapResult {
+    ImapOk,
+    ImapError,
+}
+
+struct ServerResponse {
+    tag: Option<Tag>,
+    result: ImapResult,
+    response_code: Option<ResponseCode>,
+    msg: Option<String>,
+}
+
+impl<T> From<T> for ServerResponse
+where
+    T: AsRef<str>,
+{
+    fn from(s: T) -> Self {
+        let s = s.as_ref();
+        let mut splits = s.split(" ");
+        let tag;
+        let result = todo!();
+        let response_code = todo!();
+        let msg = todo!();
+        match splits.next().unwrap() {
+            "*" => {
+                tag = None;
+            }
+            "+" => tag = Some(Tag::Continuation),
+            s => tag = Some(Tag::Tag(TagRepr::from(s))),
+        };
+
+        Self {
+            tag,
+            result,
+            response_code,
+            msg,
+        }
+    }
+}
+
+enum ImapOk {
     Ok(Option<String>),
-    No(Option<String>),
-    Bad(Option<String>),
     Preauth(Option<String>),
     Bye(Option<String>),
+}
+
+enum ImapError {
+    No(Option<String>),
+    Bad(Option<String>),
+}
+
+enum ResponseCode {
+    // TODO: hide until TLS auth is ensured
     Alert,
     AlreadyExists,
     AppendUid,
@@ -213,13 +291,20 @@ enum Response {
     UnknownCte,
 }
 
+enum State {
+    NotAuthenticated,
+    Authenticated,
+    Selected,
+    Logout,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
     fn test_tag() {
-        let mut t = Tag::new();
+        let mut t = TagRepr::new();
         // Increase number
         for i in 1..=9999 {
             assert_eq!(format!("A{:>04}", i), format!("{}", t));
@@ -234,5 +319,17 @@ mod test {
             t.inc();
         }
         assert_eq!(String::from("A0001"), format!("{}", t));
+    }
+
+    #[test]
+    fn test_response_parsing() {
+        let rs = [
+            "* OK [CAPABILITY IMAP4rev2 STARTTLS AUTH=GSSAPI",
+            "A01 OK STARTTLS complete",
+            "* CAPABILITY IMAP4rev2 AUTH=GSSAPI AUTH=PLA",
+            "* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft",
+            "* LIST () \" / \" blurdybloop",
+            "A932 OK [READ-ONLY] EXAMINE complet",
+        ];
     }
 }
