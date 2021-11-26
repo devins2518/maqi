@@ -1,21 +1,21 @@
-use super::imap::ImapStream;
+use super::imap::ImapClient;
 use std::io;
 
 pub struct EmailClient {
-    imap_stream: ImapStream,
+    imap: ImapClient,
     // TODO
-    smtp_stream: (),
+    smtp: (),
 }
 
 impl EmailClient {
     pub fn new(imap: String, _smtp: String) -> Result<Self, io::Error> {
         Ok(Self {
-            imap_stream: ImapStream::new(imap)?,
-            smtp_stream: (),
+            imap: ImapClient::new(imap)?,
+            smtp: (),
         })
     }
     pub fn init(&mut self) {
-        self.imap_stream.init(todo!(), todo!());
+        self.imap.init(todo!(), todo!());
         // SMTP initialization
         todo!();
     }

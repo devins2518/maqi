@@ -1,66 +1,24 @@
-use std::{
-    fmt::{self, Display},
-    io::{self, Write},
-    net::TcpStream,
-    str::{self, FromStr},
-};
-
-/// TODO:
-/// From RFC 9051:
-/// [ ] Manipulation of remote mailboxes
-/// [ ] Local mailbox synchronization
-/// [ ] Create, delete, rename mailboxes
-/// [ ] Check for new messages
-/// [ ] Remove messages permanently
-/// [ ] Set and clear message flags
-/// [ ] Parsing per RFC 5322, 2045, 2231
-/// [ ] Selective fetching of message attrs, texts, and portions
-
-pub struct ImapStream {
-    stream: TcpStream,
-    tag: TagRepr,
-    state: State,
-}
-
-impl ImapStream {
-    pub fn new(addr: String) -> Result<Self, io::Error> {
-        Ok(Self {
-            stream: TcpStream::connect(addr)?,
-            tag: TagRepr::new(),
-            state: State::NotAuthenticated,
-        })
-    }
-
-    pub fn init(&mut self, _user: &str, _pass: &str) {
-        todo!("TLS stuff");
-    }
-
-    pub fn send(&mut self, command: Command, body: &str) {
-        let c_str = COMMAND_STR[command as usize];
-        self.stream
-            .write(format!("{} {} {}", self.tag, c_str, body).as_bytes());
-        self.tag.inc()
-    }
-}
+use std::fmt::{self, Display};
+use std::str::{self, FromStr};
 
 enum Tag {
     Tag(TagRepr),
     Continuation,
 }
 
-struct TagRepr {
+pub struct TagRepr {
     alpha: char,
     numeric: u16,
 }
 
 impl TagRepr {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             alpha: 'A',
             numeric: 0001,
         }
     }
-    fn inc(&mut self) {
+    pub fn inc(&mut self) {
         if self.numeric == 9999 {
             // TODO: increase letter
             self.alpha = if self.alpha == 'Z' {
@@ -95,70 +53,75 @@ impl Display for TagRepr {
     }
 }
 
-const COMMAND_STR: [&str; 28] = [
-    "CAPABILITY",
-    "NOOP",
-    "LOGOUT",
-    "STARTTLS",
-    "AUTHENTICATE",
-    "LOGIN",
-    "ENABLE",
-    "SELECT",
-    "EXAMINE",
-    "CREATE",
-    "DELETE",
-    "RENAME",
-    "SUBSCRIBE",
-    "UNSUBSCRIBE",
-    "LIST",
-    "NAMESPACE",
-    "STATUS",
-    "APPEND",
-    "IDLE",
-    "CLOSE",
-    "UNSELECT",
-    "EXPUNGE",
-    "SEARCH",
-    "FETCH",
-    "STORE",
-    "COPY",
-    "MOVE",
-    "UID",
-];
-
-enum Command {
+pub enum Command {
     // Any state
-    CAPABILITY,
-    NOOP,
-    LOGOUT,
+    Capability,
+    Noop,
+    Logout,
     // Not Auth state
-    STARTTLS,
-    AUTHENTICATE,
-    LOGIN,
+    StartTLS,
+    Authenticate,
+    Login,
     // Auth state
-    ENABLE,
-    SELECT,
-    EXAMINE,
-    CREATE,
-    DELETE,
-    RENAME,
-    SUBSCRIBE,
-    UNSUBSCRIBE,
-    LIST,
-    NAMESPACE,
-    STATUS,
-    APPEND,
-    IDLE,
+    Enable,
+    Select,
+    Examine,
+    Create,
+    Delete,
+    Rename,
+    Subscribe,
+    Unsubscribe,
+    List,
+    Namespace,
+    Status,
+    Append,
+    Idle,
     // Select state
-    CLOSE,
-    UNSELECT,
-    EXPUNGE,
-    SEARCH,
-    FETCH,
-    STORE,
-    COPY,
-    MOVE,
+    Close,
+    Unselect,
+    Expunge,
+    Search,
+    Fetch,
+    Store,
+    Copy,
+    Move,
     UID,
+}
+
+impl Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Command::Capability => "CAPABILITY",
+            Command::Noop => "NOOP",
+            Command::Logout => "LOGOUT",
+            Command::StartTLS => "STARTTLS",
+            Command::Authenticate => "AUTHENTICATE",
+            Command::Login => "LOGIN",
+            Command::Enable => "ENABLE",
+            Command::Select => "SELECT",
+            Command::Examine => "EXAMINE",
+            Command::Create => "CREATE",
+            Command::Delete => "DELETE",
+            Command::Rename => "RENAME",
+            Command::Subscribe => "SUBSCRIBE",
+            Command::Unsubscribe => "UNSUBSCRIBE",
+            Command::List => "LIST",
+            Command::Namespace => "NAMESPACE",
+            Command::Status => "STATUS",
+            Command::Append => "APPEND",
+            Command::Idle => "IDLE",
+            Command::Close => "CLOSE",
+            Command::Unselect => "UNSELECT",
+            Command::Expunge => "EXPUNGE",
+            Command::Search => "SEARCH",
+            Command::Fetch => "FETCH",
+            Command::Store => "STORE",
+            Command::Copy => "COPY",
+            Command::Move => "MOVE",
+            Command::UID => "UID",
+        };
+        f.write_str(s)
+    }
 }
 
 const RESPONSE_CODE_STR: [&str; 38] = [
@@ -207,7 +170,7 @@ enum ImapResult {
     ImapError,
 }
 
-struct ServerResponse {
+pub struct ServerResponse {
     tag: Option<Tag>,
     result: ImapResult,
     response_code: Option<ResponseCode>,
@@ -291,7 +254,7 @@ enum ResponseCode {
     UnknownCte,
 }
 
-enum State {
+pub enum State {
     NotAuthenticated,
     Authenticated,
     Selected,
