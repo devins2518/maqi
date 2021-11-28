@@ -1,11 +1,13 @@
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
 
+#[derive(Debug, PartialEq, Eq)]
 enum Tag {
     Tag(TagRepr),
     Continuation,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct TagRepr {
     alpha: char,
     numeric: u16,
@@ -165,11 +167,13 @@ const RESPONSE_CODE_STR: [&str; 38] = [
     "UNKNOWN-CTE",
 ];
 
+#[derive(Debug, PartialEq, Eq)]
 enum ImapResult {
-    ImapOk,
-    ImapError,
+    ImapOk(ImapOk),
+    ImapError(ImapError),
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct ServerResponse {
     tag: Option<Tag>,
     result: ImapResult,
@@ -205,17 +209,20 @@ where
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 enum ImapOk {
-    Ok(Option<String>),
-    Preauth(Option<String>),
-    Bye(Option<String>),
+    Ok,
+    Preauth,
+    Bye,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 enum ImapError {
-    No(Option<String>),
-    Bad(Option<String>),
+    No,
+    Bad,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 enum ResponseCode {
     // TODO: hide until TLS auth is ensured
     Alert,
@@ -282,17 +289,5 @@ mod test {
             t.inc();
         }
         assert_eq!(String::from("A0001"), format!("{}", t));
-    }
-
-    #[test]
-    fn test_response_parsing() {
-        let rs = [
-            "* OK [CAPABILITY IMAP4rev2 STARTTLS AUTH=GSSAPI",
-            "A01 OK STARTTLS complete",
-            "* CAPABILITY IMAP4rev2 AUTH=GSSAPI AUTH=PLA",
-            "* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft",
-            "* LIST () \" / \" blurdybloop",
-            "A932 OK [READ-ONLY] EXAMINE complet",
-        ];
     }
 }
