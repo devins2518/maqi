@@ -285,7 +285,7 @@ pub(super) enum Token {
     BWSlashFlagged,       // \Flagged
     BWSlashHasChildren,   // \HasChildren
     BWSlashHasNoChildren, // \HasNoChildren
-    BWSlashMarked,        // \Mark
+    BWSlashMarked,        // \Marked
     BWSlashNoInferiors,   // \Noinferiors
     BWSlashNoSelect,      // \Noselect
     BWSlashNonExistent,   // \NonExistent
