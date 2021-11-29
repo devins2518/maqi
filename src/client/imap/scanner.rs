@@ -421,6 +421,158 @@ impl<'str> Scanner<'str> {
                     _ => unreachable!(),
                 }
             }
+            'E' => match self.advance() {
+                'S' => {
+                    self.advance_to_next_word();
+                    Token::ESearch
+                }
+                'N' => match self.advance() {
+                    'A' => {
+                        self.skip(3);
+                        if self.next('D') {
+                            Token::Enabled
+                        } else {
+                            Token::Enable
+                        }
+                    }
+                    'V' => {
+                        self.advance_to_next_word();
+                        Token::Envelope
+                    }
+                    _ => unreachable!(),
+                },
+                'X' => match self.advance() {
+                    'A' => {
+                        self.advance_to_next_word();
+                        Token::Examine
+                    }
+                    'I' => {
+                        self.advance_to_next_word();
+                        Token::Exists
+                    }
+                    'P' => match self.advance() {
+                        'I' => {
+                            self.advance_to_next_word();
+                            Token::Expired
+                        }
+                        'U' => {
+                            self.skip(3);
+                            if self.next('I') {
+                                self.advance_to_next_word();
+                                Token::ExpungeIssued
+                            } else {
+                                self.advance_to_next_word();
+                                Token::Expunge
+                            }
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                },
+                _ => unreachable!(),
+            },
+            'F' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Fast
+                }
+                'e' => {
+                    self.advance_to_next_word();
+                    Token::Feb
+                }
+                'E' => {
+                    self.advance_to_next_word();
+                    Token::Fetch
+                }
+                'L' => {
+                    self.skip(2);
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'G' => Token::Flagged,
+                        'S' => Token::Flags,
+                        _ => unreachable!(),
+                    }
+                }
+                'O' => {
+                    self.advance_to_next_word();
+                    Token::Font
+                }
+                'R' => {
+                    self.advance_to_next_word();
+                    Token::From
+                }
+                'U' => {
+                    self.advance_to_next_word();
+                    Token::Full
+                }
+                _ => unreachable!(),
+            },
+            'G' => {
+                self.advance_to_next_word();
+                Token::Global
+            }
+            'H' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::HasChildren
+                }
+                'E' => {
+                    self.advance_to_next_word();
+                    // TODO: maybe wrong
+                    if self.next('.') {
+                        Token::HeaderDotFields
+                    } else {
+                        Token::Header
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'I' => match self.advance() {
+                'M' => {
+                    self.skip(1);
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'P' => Token::IMAP4Rev2,
+                        'G' => Token::Image,
+                        _ => unreachable!(),
+                    }
+                }
+                'D' => {
+                    self.advance_to_next_word();
+                    Token::Idle
+                }
+                'N' => {
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'U' => Token::InUse,
+                        'B' => Token::Inbox,
+                        'T' => Token::Internaldate,
+                        _ => unreachable!(),
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'J' => {
+                let c = self.advance();
+                let n = self.advance();
+                match (c, n) {
+                    ('a', 'n') => Token::Jan,
+                    ('u', 'l') => Token::Jul,
+                    ('u', 'n') => Token::Jun,
+                    _ => unreachable!(),
+                }
+            }
+            'K' => {
+                self.advance_to_next_word();
+                Token::Keyword
+            }
+            '8' => {
+                self.advance_to_next_word();
+                Token::EightBit
+            }
             x => todo!("didn't handle {}", x),
         };
 
