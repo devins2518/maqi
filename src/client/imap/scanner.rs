@@ -569,6 +569,99 @@ impl<'str> Scanner<'str> {
                 self.advance_to_next_word();
                 Token::Keyword
             }
+            'L' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Larger
+                }
+                'I' => {
+                    if self.next('M') {
+                        self.advance_to_next_word();
+                        Token::Limit
+                    } else {
+                        self.advance_to_next_word();
+                        Token::List
+                    }
+                }
+                'O' => {
+                    self.skip(1);
+                    if self.next('I') {
+                        self.advance_to_next_word();
+                        Token::Login
+                    } else {
+                        self.advance_to_next_word();
+                        Token::Logout
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'M' => match self.advance() {
+                'a' => {
+                    if self.next('r') {
+                        self.advance_to_next_word();
+                        Token::Mar
+                    } else {
+                        self.advance_to_next_word();
+                        Token::May
+                    }
+                }
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Max
+                }
+                'E' => {
+                    self.skip(5);
+                    if self.next('S') {
+                        self.advance_to_next_word();
+                        Token::Messages
+                    } else {
+                        self.advance_to_next_word();
+                        Token::Message
+                    }
+                }
+                'I' => {
+                    if self.next('M') {
+                        self.advance_to_next_word();
+                        Token::Mime
+                    } else {
+                        self.advance_to_next_word();
+                        Token::Min
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'N' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Namespace
+                }
+                'I' => {
+                    self.advance_to_next_word();
+                    Token::Nil
+                }
+                'O' => {
+                    if self.next('P') {
+                        self.advance_to_next_word();
+                        Token::NoPerm
+                    } else if self.next('N') {
+                        self.advance_to_next_word();
+                        Token::NonExistent
+                    } else if self.next('O') {
+                        self.advance_to_next_word();
+                        Token::Noop
+                    } else if self.next('T') {
+                        self.advance_to_next_word();
+                        Token::NotSaved
+                    } else {
+                        self.advance_to_next_word();
+                        Token::No
+                    }
+                }
+                'o' => {
+                    self.advance_to_next_word();
+                    Token::Nov
+                }
+            },
             '8' => {
                 self.advance_to_next_word();
                 Token::EightBit
