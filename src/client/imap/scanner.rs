@@ -169,6 +169,7 @@ impl<'str> Scanner<'str> {
             '_' => Token::UNDERSCORE,
             // TODO: possibly wrong
             '\r' => Token::CRLF,
+            '"' => Token::DQUOTE,
             ' ' => Token::SP,
             'A' => match self.advance() {
                 'L' => {
@@ -216,18 +217,7 @@ impl<'str> Scanner<'str> {
                     'T' => {
                         self.skip(1);
                         match self.advance() {
-                            '=' => {
-                                let current = self.current;
-                                self.advance_to_next_word();
-                                let diff = self.current - current;
-                                Token::AuthEq(
-                                    self.source
-                                        .chars()
-                                        .skip(current)
-                                        .take(diff)
-                                        .collect::<String>(),
-                                )
-                            }
+                            '=' => Token::AuthEq(self.get_next_word()),
                             'E' => {
                                 self.skip(7);
                                 let c = self.advance();
@@ -251,7 +241,10 @@ impl<'str> Scanner<'str> {
                     self.advance_to_next_word();
                     Token::Aug
                 }
-                x => todo!("todo: {}", x),
+                _ => {
+                    self.back(2);
+                    Token::Other(self.get_next_word())
+                }
             },
             'B' => match self.advance() {
                 'A' => match self.advance() {
@@ -408,19 +401,6 @@ impl<'str> Scanner<'str> {
                 }
                 _ => unreachable!(),
             },
-            'O' => {
-                let c = self.advance();
-                self.advance_to_next_word();
-                match c {
-                    'c' => Token::Oct,
-                    'K' => Token::Ok,
-                    'L' => Token::OldName,
-                    'N' => Token::On,
-                    'R' => Token::Or,
-                    'V' => Token::OverQuota,
-                    _ => unreachable!(),
-                }
-            }
             'E' => match self.advance() {
                 'S' => {
                     self.advance_to_next_word();
@@ -661,22 +641,254 @@ impl<'str> Scanner<'str> {
                     self.advance_to_next_word();
                     Token::Nov
                 }
+                _ => unreachable!(),
             },
+            'O' => {
+                let c = self.advance();
+                self.advance_to_next_word();
+                match c {
+                    'c' => Token::Oct,
+                    'K' => Token::Ok,
+                    'L' => Token::OldName,
+                    'N' => Token::On,
+                    'R' => Token::Or,
+                    'V' => Token::OverQuota,
+                    _ => unreachable!(),
+                }
+            }
+            'P' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Parse
+                }
+                'E' => {
+                    self.advance_to_next_word();
+                    Token::PermanentFlags
+                }
+                'R' => {
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'E' => Token::PreAuth,
+                        'I' => Token::PrivacyRequired,
+                        _ => unreachable!(),
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'Q' => {
+                self.advance_to_next_word();
+                Token::QuotedPrintable
+            }
+            'R' => match self.advance() {
+                'F' => {
+                    self.advance_to_next_word();
+                    if self.next('.') {
+                        self.advance_to_next_word();
+                        Token::RFC822DotSize
+                    } else {
+                        Token::RFC822
+                    }
+                }
+                'E' => match self.advance() {
+                    'A' => {
+                        self.advance_to_next_word();
+                        self.skip(1);
+                        if self.next('O') {
+                            self.advance_to_next_word();
+                            Token::ReadHyphenOnly
+                        } else {
+                            self.advance_to_next_word();
+                            Token::ReadHyphenWrite
+                        }
+                    }
+                    'C' => {
+                        self.advance_to_next_word();
+                        Token::RecursiveMatch
+                    }
+                    'M' => {
+                        self.advance_to_next_word();
+                        Token::Remote
+                    }
+                    'T' => {
+                        self.advance_to_next_word();
+                        Token::Return
+                    }
+                    _ => unreachable!(),
+                },
+                _ => unreachable!(),
+            },
+            'S' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Save
+                }
+                'E' => match self.advance() {
+                    'A' => {
+                        self.advance_to_next_word();
+                        Token::Search
+                    }
+                    'E' => {
+                        self.advance_to_next_word();
+                        Token::Seen
+                    }
+                    'L' => {
+                        self.advance_to_next_word();
+                        Token::Select
+                    }
+                    'N' => {
+                        self.skip(1);
+                        let c = self.advance();
+                        self.advance_to_next_word();
+                        match c {
+                            'B' => Token::SentBefore,
+                            'O' => Token::SentOn,
+                            'S' => Token::SentSince,
+                            _ => unreachable!(),
+                        }
+                    }
+                    'R' => {
+                        self.advance_to_next_word();
+                        Token::ServerBug
+                    }
+                    _ => unreachable!(),
+                },
+                'e' => {
+                    self.advance_to_next_word();
+                    Token::Sep
+                }
+                'I' => {
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'N' => Token::Since,
+                        'Z' => Token::Size,
+                        _ => unreachable!(),
+                    }
+                }
+                'M' => {
+                    self.advance_to_next_word();
+                    Token::Smaller
+                }
+                'T' => match self.advance() {
+                    'A' => {
+                        let c = self.advance();
+                        self.advance_to_next_word();
+                        match c {
+                            'R' => Token::StartTLS,
+                            'T' => Token::Status,
+                            _ => unreachable!(),
+                        }
+                    }
+                    'O' => {
+                        self.advance_to_next_word();
+                        Token::Store
+                    }
+                    'R' => {
+                        self.advance_to_next_word();
+                        Token::Structure
+                    }
+                    _ => unreachable!(),
+                },
+                'U' => {
+                    self.skip(1);
+                    let c = self.advance();
+                    self.advance_to_next_word();
+                    match c {
+                        'J' => Token::Subject,
+                        'S' => Token::Subscribed,
+                        _ => unreachable!(),
+                    }
+                }
+                _ => unreachable!(),
+            },
+            'T' => match self.advance() {
+                'A' => {
+                    self.advance_to_next_word();
+                    Token::Tag
+                }
+                'E' => {
+                    self.advance_to_next_word();
+                    Token::Text
+                }
+                'O' => {
+                    self.advance_to_next_word();
+                    Token::To
+                }
+                'R' => {
+                    self.advance_to_next_word();
+                    Token::TryCreate
+                }
+                _ => unreachable!(),
+            },
+            'U' => match self.advance() {
+                'I' => {
+                    self.skip(1);
+                    if self.next('N') {
+                        match self.advance() {
+                            'E' => {
+                                self.advance_to_next_word();
+                                Token::UIDNext
+                            }
+                            'O' => {
+                                self.advance_to_next_word();
+                                Token::UIDNotSticky
+                            }
+                            _ => unreachable!(),
+                        }
+                    } else if self.next('V') {
+                        self.advance_to_next_word();
+                        Token::UIDValidity
+                    } else {
+                        self.advance_to_next_word();
+                        Token::UID
+                    }
+                }
+                'N' => match self.advance() {
+                    'A' => unimplemented!(),
+                    'D' => unimplemented!(),
+                    'F' => unimplemented!(),
+                    'K' => unimplemented!(),
+                    'S' => unimplemented!(),
+                    _ => unreachable!(),
+                },
+                _ => unreachable!(),
+            },
+            'v' => {
+                self.advance_to_next_word();
+                self.skip(1);
+                Token::VenderDot
+            }
+            'V' => {
+                self.advance_to_next_word();
+                Token::Video
+            }
+            '7' => {
+                self.advance_to_next_word();
+                Token::SevenBit
+            }
             '8' => {
                 self.advance_to_next_word();
                 Token::EightBit
             }
-            x => todo!("didn't handle {}", x),
+            _ => {
+                self.back(1);
+                Token::Other(self.get_next_word())
+            }
         };
 
         self.tokens.push(t);
-        println!("{:#?}", self.tokens);
+        // println!("{:#?}", self.tokens);
     }
 
     fn advance(&mut self) -> char {
         let c = self.source.chars().nth(self.current).unwrap();
         self.current += 1;
         return c;
+    }
+
+    fn back(&mut self, n: usize) {
+        self.current -= n;
     }
 
     fn skip(&mut self, n: usize) {
@@ -713,12 +925,24 @@ impl<'str> Scanner<'str> {
             self.advance();
         }
     }
+
     fn is_alphanumeric(&self) -> bool {
         if let Some(x) = self.source.chars().nth(self.current) {
             x.is_alphanumeric()
         } else {
             false
         }
+    }
+
+    fn get_next_word(&mut self) -> String {
+        let current = self.current;
+        self.advance_to_next_word();
+        let diff = self.current - current;
+        self.source
+            .chars()
+            .skip(current)
+            .take(diff)
+            .collect::<String>()
     }
 }
 
@@ -732,16 +956,11 @@ mod test {
             "* OK [CAPABILITY IMAP4rev2 STARTTLS AUTH=GSSAPI]",
             "A01 OK STARTTLS complete",
             "* CAPABILITY IMAP4rev2 AUTH=GSSAPI AUTH=PLA",
-            "* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft",
-            "* LIST () \" / \" blurdybloop",
-            "A932 OK [READ-ONLY] EXAMINE complet",
+            "* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft)",
+            "* LIST () \"/\" blurdybloop",
+            "A932 OK [READ-ONLY] EXAMINE complete",
         ];
-
-        let mut scanner = Scanner::new(rs[0]);
-        scanner.scan_tokens();
-
-        assert_eq!(
-            scanner.tokens,
+        let ts = [
             vec![
                 Token::STAR,
                 Token::SP,
@@ -755,9 +974,79 @@ mod test {
                 Token::StartTLS,
                 Token::SP,
                 Token::AuthEq(String::from("GSSAPI")),
-                Token::RBRACKET
-            ]
-        );
+                Token::RBRACKET,
+            ],
+            vec![
+                Token::Other(String::from("A01")),
+                Token::SP,
+                Token::Ok,
+                Token::SP,
+                Token::StartTLS,
+                Token::SP,
+                Token::Other(String::from("complete")),
+            ],
+            vec![
+                Token::STAR,
+                Token::SP,
+                Token::Capability,
+                Token::SP,
+                Token::IMAP4Rev2,
+                Token::SP,
+                Token::AuthEq(String::from("GSSAPI")),
+                Token::SP,
+                Token::AuthEq(String::from("PLA")),
+            ],
+            vec![
+                Token::STAR,
+                Token::SP,
+                Token::Flags,
+                Token::SP,
+                Token::LPAREN,
+                Token::BWSlashAnswered,
+                Token::SP,
+                Token::BWSlashFlagged,
+                Token::SP,
+                Token::BWSlashDeleted,
+                Token::SP,
+                Token::BWSlashSeen,
+                Token::SP,
+                Token::BWSlashDraft,
+                Token::RPAREN,
+            ],
+            vec![
+                Token::STAR,
+                Token::SP,
+                Token::List,
+                Token::SP,
+                Token::LPAREN,
+                Token::RPAREN,
+                Token::SP,
+                Token::DQUOTE,
+                Token::FWSLASH,
+                Token::DQUOTE,
+                Token::SP,
+                Token::Other(String::from("blurdybloop")),
+            ],
+            vec![
+                Token::Other(String::from("A932")),
+                Token::SP,
+                Token::Ok,
+                Token::SP,
+                Token::LBRACKET,
+                Token::ReadHyphenOnly,
+                Token::RBRACKET,
+                Token::SP,
+                Token::Examine,
+                Token::SP,
+                Token::Other(String::from("complete")),
+            ],
+        ];
+
+        for (i, s) in rs.iter().enumerate() {
+            let mut scanner = Scanner::new(s);
+            scanner.scan_tokens();
+            assert_eq!(scanner.tokens, ts[i])
+        }
     }
 
     #[test]

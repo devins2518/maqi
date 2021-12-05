@@ -262,6 +262,7 @@ pub(super) enum Token {
     COMMA,        // ,
     UNDERSCORE,   // _
     CRLF,         // \r\n
+    DQUOTE,       // "
     SP,
 
     // Word tokens
@@ -443,4 +444,5 @@ pub(super) enum Token {
     Unsubscribe,          // UNSUBSCRIBE
     VenderDot,            // vender.
     Video,                // VIDEO
+    Other(String),        // Unscanned
 }
