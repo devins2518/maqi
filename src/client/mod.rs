@@ -1,3 +1,3 @@
-mod client;
+mod emailclient;
 mod imap;
-pub use client::*;
+pub use emailclient::*;

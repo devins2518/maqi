@@ -24,7 +24,7 @@ pub struct ImapClient {
 }
 
 impl ImapClient {
-    pub fn new(addr: String) -> Result<Self, io::Error> {
+    pub fn new(addr: &str) -> Result<Self, io::Error> {
         Ok(Self {
             stream: TcpStream::connect(addr)?,
             tag: TagRepr::new(),
@@ -38,7 +38,8 @@ impl ImapClient {
 
     pub fn send(&mut self, command: Command, body: &str) {
         self.stream
-            .write(format!("{} {} {}", self.tag, command, body).as_bytes());
+            .write(format!("{} {} {}", self.tag, command, body).as_bytes())
+            .unwrap();
         self.tag.inc()
     }
 

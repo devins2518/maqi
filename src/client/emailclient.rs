@@ -8,7 +8,8 @@ pub struct EmailClient {
 }
 
 impl EmailClient {
-    pub fn new(imap: String, _smtp: String) -> Result<Self, io::Error> {
+    /// (IMAP, SMTP)
+    pub fn new(imap: &str, _smtp: &str) -> Result<Self, io::Error> {
         Ok(Self {
             imap: ImapClient::new(imap)?,
             smtp: (),

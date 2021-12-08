@@ -1,11 +1,12 @@
-use crate::ui;
+use crate::{client::EmailClient, ui};
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
 use std::io::{self, Stdout};
-use tui::{backend::CrosstermBackend, text::Spans};
+use tui::backend::CrosstermBackend;
 
 pub struct Application {
     pub title: &'static str,
     pub spans: Vec<String>,
+    email_client: EmailClient,
 }
 
 impl<'a> Application {
@@ -13,6 +14,8 @@ impl<'a> Application {
         Self {
             title,
             spans: Vec::new(),
+            // TODO: using google
+            email_client: EmailClient::new("imap.gmail.com:993", "smtp.gmail.com:587").unwrap(),
         }
     }
 
