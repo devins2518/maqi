@@ -1,4 +1,4 @@
-use super::imap::ImapClient;
+use crate::imap::ImapClient;
 use std::io;
 
 pub struct EmailClient {
