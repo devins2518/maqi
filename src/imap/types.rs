@@ -1,9 +1,13 @@
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
 
+use super::error::ImapError;
+use super::parser::Token;
+use super::scanner::Scanner;
+
 #[derive(Debug, PartialEq, Eq)]
 enum Tag {
-    Tag(TagRepr),
+    Real(TagRepr),
     Continuation,
 }
 
@@ -63,7 +67,8 @@ pub enum Command {
     // Not Auth state
     StartTLS,
     Authenticate,
-    Login,
+    //    user    pass
+    Login(String, String),
     // Auth state
     Enable,
     Select,
@@ -90,39 +95,81 @@ pub enum Command {
     UID,
 }
 
+impl Command {
+    pub fn check(&self, state: &State) -> Option<ImapError> {
+        match (self, state) {
+            (Command::Capability | Command::Noop | Command::Logout, _) => None,
+            (
+                Command::StartTLS | Command::Authenticate | Command::Login(_, _),
+                State::NotAuthenticated,
+            ) => None,
+            (
+                Command::Enable
+                | Command::Select
+                | Command::Examine
+                | Command::Create
+                | Command::Delete
+                | Command::Rename
+                | Command::Subscribe
+                | Command::Unsubscribe
+                | Command::List
+                | Command::Namespace
+                | Command::Status
+                | Command::Append
+                | Command::Idle,
+                State::Authenticated,
+            ) => None,
+            (
+                Command::Close
+                | Command::Unselect
+                | Command::Expunge
+                | Command::Search
+                | Command::Fetch
+                | Command::Store
+                | Command::Copy
+                | Command::Move
+                | Command::UID,
+                State::Selected,
+            ) => None,
+            _ => Some(ImapError::InvalidState),
+        }
+    }
+}
+
 impl Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // TODO: possible to remove allocations
         let s = match self {
-            Command::Capability => "CAPABILITY",
-            Command::Noop => "NOOP",
-            Command::Logout => "LOGOUT",
-            Command::StartTLS => "STARTTLS",
-            Command::Authenticate => "AUTHENTICATE",
-            Command::Login => "LOGIN",
-            Command::Enable => "ENABLE",
-            Command::Select => "SELECT",
-            Command::Examine => "EXAMINE",
-            Command::Create => "CREATE",
-            Command::Delete => "DELETE",
-            Command::Rename => "RENAME",
-            Command::Subscribe => "SUBSCRIBE",
-            Command::Unsubscribe => "UNSUBSCRIBE",
-            Command::List => "LIST",
-            Command::Namespace => "NAMESPACE",
-            Command::Status => "STATUS",
-            Command::Append => "APPEND",
-            Command::Idle => "IDLE",
-            Command::Close => "CLOSE",
-            Command::Unselect => "UNSELECT",
-            Command::Expunge => "EXPUNGE",
-            Command::Search => "SEARCH",
-            Command::Fetch => "FETCH",
-            Command::Store => "STORE",
-            Command::Copy => "COPY",
-            Command::Move => "MOVE",
-            Command::UID => "UID",
+            Command::Capability => "CAPABILITY".to_string(),
+            Command::Noop => "NOOP".to_string(),
+            Command::Logout => "LOGOUT".to_string(),
+            Command::StartTLS => "STARTTLS".to_string(),
+            Command::Authenticate => "AUTHENTICATE".to_string(),
+            Command::Login(user, pass) => format!("LOGIN {} {}", user, pass),
+            Command::Enable => "ENABLE".to_string(),
+            Command::Select => "SELECT".to_string(),
+            Command::Examine => "EXAMINE".to_string(),
+            Command::Create => "CREATE".to_string(),
+            Command::Delete => "DELETE".to_string(),
+            Command::Rename => "RENAME".to_string(),
+            Command::Subscribe => "SUBSCRIBE".to_string(),
+            Command::Unsubscribe => "UNSUBSCRIBE".to_string(),
+            Command::List => "LIST".to_string(),
+            Command::Namespace => "NAMESPACE".to_string(),
+            Command::Status => "STATUS".to_string(),
+            Command::Append => "APPEND".to_string(),
+            Command::Idle => "IDLE".to_string(),
+            Command::Close => "CLOSE".to_string(),
+            Command::Unselect => "UNSELECT".to_string(),
+            Command::Expunge => "EXPUNGE".to_string(),
+            Command::Search => "SEARCH".to_string(),
+            Command::Fetch => "FETCH".to_string(),
+            Command::Store => "STORE".to_string(),
+            Command::Copy => "COPY".to_string(),
+            Command::Move => "MOVE".to_string(),
+            Command::UID => "UID".to_string(),
         };
-        f.write_str(s)
+        f.write_str(&s)
     }
 }
 
@@ -170,12 +217,12 @@ const RESPONSE_CODE_STR: [&str; 38] = [
 #[derive(Debug, PartialEq, Eq)]
 enum ImapResult {
     ImapOk(ImapOk),
-    ImapError(ImapError),
+    ImapError(ImapErrorInternal),
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ServerResponse {
-    tag: Option<Tag>,
+    tag: Tag,
     result: ImapResult,
     response_code: Option<ResponseCode>,
     msg: Option<String>,
@@ -186,19 +233,18 @@ where
     T: AsRef<str>,
 {
     fn from(s: T) -> Self {
-        let s = s.as_ref();
-        let mut splits = s.split(" ");
-        let tag;
+        let mut scanner = Scanner::new(s.as_ref());
+        scanner.scan_tokens();
+        let mut iter = scanner.tokens.iter();
+        let tag = match iter.next().unwrap() {
+            Token::STAR => Tag::Continuation,
+            Token::PLUS => Tag::Continuation,
+            Token::Other(t) => Tag::Real(TagRepr::from(t)),
+            _ => unreachable!(),
+        };
         let result = todo!();
         let response_code = todo!();
         let msg = todo!();
-        match splits.next().unwrap() {
-            "*" => {
-                tag = None;
-            }
-            "+" => tag = Some(Tag::Continuation),
-            s => tag = Some(Tag::Tag(TagRepr::from(s))),
-        };
 
         Self {
             tag,
@@ -217,7 +263,7 @@ enum ImapOk {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum ImapError {
+enum ImapErrorInternal {
     No,
     Bad,
 }

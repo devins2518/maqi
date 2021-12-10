@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 tui = { version = "0.16", default-features = false, features = ['crossterm'] }
 crossterm = "0.19"
+openssl = { version = "0.10", features = ["vendored"] }

@@ -1,9 +1,9 @@
 use super::parser::Token;
 
-struct Scanner<'str> {
+pub struct Scanner<'str> {
     // TODO: Change to scan on a stream
     source: &'str str,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
 
     start: usize,
     current: usize,
@@ -514,6 +514,7 @@ impl<'str> Scanner<'str> {
                     let c = self.advance();
                     self.advance_to_next_word();
                     match c {
+                        // TODO: match for IMAP4Rev1
                         'P' => Token::IMAP4Rev2,
                         'G' => Token::Image,
                         _ => unreachable!(),

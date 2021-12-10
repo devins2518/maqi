@@ -11,11 +11,17 @@ pub struct Application {
 
 impl<'a> Application {
     pub fn new(title: &'static str) -> Self {
+        // TODO: using google
+        let mut email_client =
+            EmailClient::new("imap.gmail.com:993", "smtp.gmail.com:587").unwrap();
+        if let Err(_e) = email_client.init() {
+            // TODO: Own terminal and draw error messages
+            todo!()
+        }
         Self {
             title,
             spans: Vec::new(),
-            // TODO: using google
-            email_client: EmailClient::new("imap.gmail.com:993", "smtp.gmail.com:587").unwrap(),
+            email_client,
         }
     }
 

@@ -1,4 +1,12 @@
-pub struct Parser {}
+pub struct Parser<'a> {
+    backing: &'a str,
+}
+
+impl<'a> Parser<'a> {
+    pub fn new(backing: &'a str) -> Self {
+        Self { backing }
+    }
+}
 
 enum Types {
     SP,
@@ -236,7 +244,7 @@ enum Types {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum Token {
+pub enum Token {
     // Single or multi character tokens
     DOLLAR,       // $
     LPAREN,       // (
@@ -355,6 +363,7 @@ pub(super) enum Token {
     HasChildren,          // HASCHILDREN
     Header,               // HEADER
     HeaderDotFields,      // HEADER.FIELDS
+    IMAP4Rev1,            // IMAP4rev1
     IMAP4Rev2,            // IMAP4rev2
     Idle,                 // IDLE
     Image,                // IMAGE
