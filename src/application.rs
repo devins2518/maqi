@@ -1,33 +1,33 @@
-use crate::{client::EmailClient, ui};
+use crate::{client::EmailClient, terminal::Terminal, ui};
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
-use std::io::{self, Stdout};
-use tui::backend::CrosstermBackend;
+use std::io;
 
 pub struct Application {
+    terminal: Terminal,
     pub title: &'static str,
-    pub spans: Vec<String>,
     email_client: EmailClient,
 }
 
 impl<'a> Application {
     pub fn new(title: &'static str) -> Self {
         // TODO: using google
-        let mut email_client =
-            EmailClient::new("imap.gmail.com:993", "smtp.gmail.com:587").unwrap();
-        if let Err(_e) = email_client.init() {
+        let mut email_client = EmailClient::new();
+        // TODO: move out of application initialization once configuration is finished
+        if let Err(_e) = email_client.connect("imap.gmail.com:993", "smtp.gmail.com:587") {
             // TODO: Own terminal and draw error messages
-            todo!()
+            // todo!()
+            ()
         }
         Self {
+            terminal: Terminal::new(),
             title,
-            spans: Vec::new(),
             email_client,
         }
     }
 
-    pub fn run(&mut self, term: &mut tui::Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
+    pub fn run(&mut self) -> io::Result<()> {
         loop {
-            term.draw(|f| ui::draw(f, self))?;
+            self.terminal.0.draw(|f| ui::draw(f))?;
 
             if let Ok(e) = event::read() {
                 match e {
@@ -35,10 +35,6 @@ impl<'a> Application {
                         code: KeyCode::Char('q'),
                         ..
                     }) => break,
-                    Key(KeyEvent {
-                        code: KeyCode::Char('t'),
-                        ..
-                    }) => self.spans.push(String::from("hey")),
                     _ => {}
                 }
             };
