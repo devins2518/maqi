@@ -3,11 +3,12 @@ use std::io::Stdout;
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
+    text::Spans,
     widgets::{Block, BorderType, Borders, Tabs},
     Frame,
 };
 
-pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>) {
+pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>, spans: &[String]) {
     let h_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
@@ -21,13 +22,18 @@ pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>) {
         .title_alignment(Alignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded);
+    let mb_area = mb_block.inner(h_chunks[0]);
     frame.render_widget(mb_block, h_chunks[0]);
 
+    let titles = spans.iter().map(|s| Spans::from(s.as_str())).collect();
+    let tabs = Tabs::new(titles);
     let tabs_block = Block::default()
         // TODO: Remove
         .title("─Tabs")
         .title_alignment(Alignment::Left)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded);
+    let tabs_area = tabs_block.inner(v_chunks[0]);
     frame.render_widget(tabs_block, v_chunks[0]);
+    frame.render_widget(tabs, tabs_area);
 }

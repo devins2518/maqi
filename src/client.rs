@@ -22,8 +22,8 @@ impl EmailClient {
         let mut split = imap.split(':').take(2);
         let client = ImapClient::new(split.next().unwrap(), split.next().unwrap())?;
         self.imap.push(client);
-        self.inc();
         self.init();
+        self.inc();
         Ok(())
     }
 
@@ -43,7 +43,6 @@ impl EmailClient {
         let user = std::env::var("EMAIL_USER").unwrap_or(String::from(""));
         let pass = std::env::var("EMAIL_PASS").unwrap_or(String::from(""));
         self.imap[self.index].init(&user, &pass)?;
-        // TODO
         // SMTP initialization
         Ok(())
     }

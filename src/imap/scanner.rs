@@ -46,7 +46,7 @@ impl<'str> Scanner<'str> {
                         'M' => Token::DollarMDNSent,
                         'N' => Token::DollarNotJunk,
                         'P' => Token::DollarPhishing,
-                        _ => unreachable!(),
+                        _ => self.other(),
                     }
                 }
             }
@@ -241,10 +241,7 @@ impl<'str> Scanner<'str> {
                     self.advance_to_next_word();
                     Token::Aug
                 }
-                _ => {
-                    self.back(2);
-                    Token::Other(self.get_next_word())
-                }
+                _ => self.other(),
             },
             'B' => match self.advance() {
                 'A' => match self.advance() {
@@ -261,7 +258,7 @@ impl<'str> Scanner<'str> {
                         self.advance_to_next_word();
                         Token::Base64
                     }
-                    _ => unimplemented!(),
+                    _ => self.other(),
                 },
                 'C' => {
                     self.advance_to_next_word();
@@ -846,11 +843,48 @@ impl<'str> Scanner<'str> {
                     }
                 }
                 'N' => match self.advance() {
-                    'A' => unimplemented!(),
-                    'D' => unimplemented!(),
-                    'F' => unimplemented!(),
-                    'K' => unimplemented!(),
-                    'S' => unimplemented!(),
+                    'A' => {
+                        if self.next('N') {
+                            self.advance_to_next_word();
+                            Token::Unanswered
+                        } else {
+                            self.advance_to_next_word();
+                            Token::Unavailable
+                        }
+                    }
+                    'D' => {
+                        if self.next('E') {
+                            self.advance_to_next_word();
+                            Token::Undeleted
+                        } else {
+                            self.advance_to_next_word();
+                            Token::Undraft
+                        }
+                    }
+                    'F' => {
+                        self.advance_to_next_word();
+                        Token::Unflagged
+                    }
+                    'K' => {
+                        if self.next('E') {
+                            self.advance_to_next_word();
+                            Token::Unkeyword
+                        } else {
+                            self.advance_to_next_word();
+                            Token::UnknownHyphenCTE
+                        }
+                    }
+                    'S' => {
+                        self.skip(1);
+                        let c = self.advance();
+                        self.advance_to_next_word();
+                        match c {
+                            'E' => Token::Unseen,
+                            'L' => Token::Unselect,
+                            'B' => Token::Unsubscribe,
+                            _ => unreachable!(),
+                        }
+                    }
                     _ => unreachable!(),
                 },
                 _ => unreachable!(),
@@ -872,14 +906,10 @@ impl<'str> Scanner<'str> {
                 self.advance_to_next_word();
                 Token::EightBit
             }
-            _ => {
-                self.back(1);
-                Token::Other(self.get_next_word())
-            }
+            _ => self.other(),
         };
 
         self.tokens.push(t);
-        // println!("{:#?}", self.tokens);
     }
 
     fn advance(&mut self) -> char {
@@ -888,12 +918,18 @@ impl<'str> Scanner<'str> {
         return c;
     }
 
-    fn back(&mut self, n: usize) {
-        self.current -= n;
-    }
-
     fn skip(&mut self, n: usize) {
         self.current += n;
+    }
+
+    fn other(&mut self) -> Token {
+        // Go back to beginning
+        while let Some(c) = self.source.chars().nth(self.current) {
+            if c != ' ' {
+                self.current -= 1;
+            }
+        }
+        Token::Other(self.get_next_word())
     }
 
     fn next(&mut self, expected: char) -> bool {

@@ -41,8 +41,8 @@ impl ImapClient {
 
     /// Only call while in State::NotAuthenticated
     pub fn init(&mut self, user: &str, pass: &str) -> IResult<()> {
-        self.send(Command::Login(String::from(user), String::from(pass)))?;
         self.dummy_receive(); // Sends an Ok message at the beginning of communication
+        self.send(Command::Login(String::from(user), String::from(pass)))?;
         let response = self.receive();
         Ok(())
     }
