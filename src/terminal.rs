@@ -3,11 +3,14 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::io::{self, Stdout};
+use std::{
+    io::{self, Stdout},
+    ops::{Deref, DerefMut},
+};
 use tui::backend::CrosstermBackend;
 use tui::Terminal as TuiTerminal;
 
-pub struct Terminal(pub tui::Terminal<CrosstermBackend<Stdout>>);
+pub struct Terminal(pub TuiTerminal<CrosstermBackend<Stdout>>);
 
 impl Terminal {
     pub fn new() -> Self {
@@ -16,6 +19,18 @@ impl Terminal {
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
         let backend = CrosstermBackend::new(stdout);
         Self(TuiTerminal::new(backend).unwrap())
+    }
+}
+
+impl Deref for Terminal {
+    type Target = TuiTerminal<CrosstermBackend<Stdout>>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Terminal {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
