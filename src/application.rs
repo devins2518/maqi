@@ -4,6 +4,7 @@ use crate::{
     ui::{self, UI},
 };
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
+use log::info;
 use std::io;
 
 pub struct Application {

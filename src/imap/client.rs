@@ -6,6 +6,7 @@ use std::{
 
 use super::error::Result as IResult;
 use super::types::{Command, ServerResponse, State, TagRepr};
+use log::debug;
 use openssl::ssl::{SslConnector, SslMethod, SslStream};
 
 /// TODO:
@@ -67,9 +68,9 @@ impl ImapClient {
     pub fn receive(&mut self) -> ServerResponse {
         let mut reader = BufReader::new(&mut self.stream);
         let mut buf = Vec::new();
-        reader.read_until(b'\r', &mut buf);
+        reader.read_until(b'\r', &mut buf).unwrap();
         let s = String::from_utf8(buf).unwrap();
-        println!("{}", s);
+        debug!("{}", s);
         ServerResponse::from(s)
     }
 }

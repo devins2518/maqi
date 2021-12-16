@@ -1,10 +1,6 @@
-use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use std::{error::Error, io};
-use tui::{backend::CrosstermBackend, Terminal};
+use log::LevelFilter;
+use simplelog::{Config, WriteLogger};
+use std::{error::Error, fs::File};
 
 mod application;
 mod client;
@@ -16,6 +12,13 @@ mod utils;
 const APP_NAME: &str = "Maqi";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    WriteLogger::init(
+        LevelFilter::Debug,
+        Config::default(),
+        File::create("/tmp/maqi.log").unwrap(),
+    )
+    .unwrap();
+
     let mut app = application::Application::new(APP_NAME);
     if let Err(e) = app.run() {
         eprintln!("Error received when running maqi!\n{}", e);
