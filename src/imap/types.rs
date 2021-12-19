@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
 

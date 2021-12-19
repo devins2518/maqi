@@ -28,6 +28,7 @@ impl Deref for Terminal {
         &self.0
     }
 }
+
 impl DerefMut for Terminal {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0

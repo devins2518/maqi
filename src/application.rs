@@ -10,7 +10,6 @@ use std::io;
 pub struct Application {
     terminal: Terminal,
     pub title: &'static str,
-    spans: Vec<String>,
     email_client: EmailClient,
     ui: UI,
 }
@@ -29,7 +28,6 @@ impl<'a> Application {
         Self {
             terminal,
             title,
-            spans: Vec::new(),
             email_client: EmailClient::new(),
             ui: UI::new(&rect),
         }
@@ -37,7 +35,7 @@ impl<'a> Application {
 
     pub fn run(&mut self) -> io::Result<()> {
         loop {
-            self.terminal.draw(|f| self.ui.draw(f, &self.spans))?;
+            self.terminal.draw(|f| self.ui.draw(f))?;
 
             if let Ok(e) = event::read() {
                 match e {
@@ -48,7 +46,7 @@ impl<'a> Application {
                     Key(KeyEvent {
                         code: KeyCode::Char('t'),
                         ..
-                    }) => self.spans.push(String::from("hey")),
+                    }) => self.ui.spans.push(String::from("hey")),
                     Key(KeyEvent {
                         code: KeyCode::Char('l'),
                         ..
@@ -61,12 +59,14 @@ impl<'a> Application {
     }
 
     fn login(&mut self) -> io::Result<()> {
-        let mut user = String::new();
-        let mut pass = String::new();
-        self.terminal.draw(|f| {
-            user = self.ui.prompt(f, "Please enter username: ");
-            pass = self.ui.prompt(f, "Please enter password: ");
-        })?;
-        unimplemented!()
+        let user = self
+            .ui
+            .prompt(&mut self.terminal, "Please enter username: ");
+        let pass = self
+            .ui
+            .prompt(&mut self.terminal, "Please enter password: ");
+        info!("user {}", user);
+        info!("pass {}", pass);
+        Ok(())
     }
 }
