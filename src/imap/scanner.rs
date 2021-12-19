@@ -915,7 +915,7 @@ impl<'str> Scanner<'str> {
     fn advance(&mut self) -> char {
         let c = self.source.chars().nth(self.current).unwrap();
         self.current += 1;
-        return c;
+        c
     }
 
     fn skip(&mut self, n: usize) {
@@ -925,8 +925,13 @@ impl<'str> Scanner<'str> {
     fn other(&mut self) -> Token {
         // Go back to beginning
         while let Some(c) = self.source.chars().nth(self.current) {
-            if c != ' ' {
+            if self.current == 0 {
+                break;
+            } else if c != ' ' {
                 self.current -= 1;
+            } else {
+                self.skip(1);
+                break;
             }
         }
         Token::Other(self.get_next_word())
@@ -934,7 +939,7 @@ impl<'str> Scanner<'str> {
 
     fn next(&mut self, expected: char) -> bool {
         if self.is_at_end() {
-            return false;
+            false
         } else {
             if let Some(x) = self.source.chars().nth(self.current) {
                 if x != expected {
@@ -959,7 +964,7 @@ impl<'str> Scanner<'str> {
 
     fn advance_to_next_word(&mut self) {
         while self.is_alphanumeric() {
-            self.advance();
+            self.skip(1);
         }
     }
 
