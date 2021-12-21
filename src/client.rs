@@ -18,13 +18,16 @@ impl EmailClient {
         }
     }
 
-    pub fn connect(&mut self, imap: &str, _smtp: &str) -> Result<(), Error> {
+    pub fn new_mailbox(&mut self, imap: &str, _smtp: &str) -> Result<(), Error> {
         let mut split = imap.split(':').take(2);
         let client = ImapClient::new(split.next().unwrap(), split.next().unwrap())?;
         self.imap.push(client);
-        self.init();
         self.inc();
         Ok(())
+    }
+
+    pub fn login(&mut self, user: &str, pass: &str) -> Result<(), Error> {
+        unimplemented!()
     }
 
     fn inc(&mut self) {

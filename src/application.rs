@@ -18,13 +18,6 @@ impl<'a> Application {
     pub fn new(title: &'static str) -> Self {
         let terminal = Terminal::new();
         let rect = terminal.size().unwrap();
-        // TODO: using google
-        // TODO: move out of application creation once configuration is finished
-        /* if let Err(_e) = email_client.connect("imap.gmail.com:993", "smtp.gmail.com:587") {
-        /     // TODO: Own terminal and draw error messages
-        /     // todo!()
-        /     ()
-         } */
         Self {
             terminal,
             title,
@@ -55,6 +48,21 @@ impl<'a> Application {
                 }
             };
         }
+        Ok(())
+    }
+
+    fn info(&mut self, msg: &str) -> io::Result<()> {
+        self.ui.info(&mut self.terminal, msg)?;
+        Ok(())
+    }
+
+    fn warning(&mut self, msg: &str) -> io::Result<()> {
+        self.ui.warning(&mut self.terminal, msg)?;
+        Ok(())
+    }
+
+    fn error(&mut self, msg: &str) -> io::Result<()> {
+        self.ui.error(&mut self.terminal, msg)?;
         Ok(())
     }
 

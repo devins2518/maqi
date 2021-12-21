@@ -66,12 +66,7 @@ impl<'msg, 'ui> Widget for &Prompt<'msg, 'ui> {
             area.x,
             area.y,
             format!("{}{}", self.msg, self.response),
-            Style {
-                fg: None,
-                bg: None,
-                add_modifier: Modifier::all(),
-                sub_modifier: Modifier::all(),
-            },
+            Style::default(),
         );
     }
 }

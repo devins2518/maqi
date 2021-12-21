@@ -1,4 +1,4 @@
-use std::io::Stdout;
+use std::io::{self, Stdout};
 use tui::{
     backend::CrosstermBackend,
     buffer::Buffer,
@@ -9,6 +9,8 @@ use tui::{
 };
 
 use crate::{terminal::Terminal, ui::prompt::Prompt};
+
+use super::report::{Report, ReportType};
 
 pub type Frame<'a> = TuiFrame<'a, CrosstermBackend<Stdout>>;
 
@@ -66,5 +68,19 @@ impl UI {
 
     pub fn prompt(&self, term: &mut Terminal, msg: &str) -> String {
         Prompt::new(msg, &self).run(term, self.prompt_buffer.area)
+    }
+
+    pub fn info(&self, term: &mut Terminal, msg: &str) -> io::Result<()> {
+        Report::new(ReportType::Info, msg, &self).show(term, self.prompt_buffer.area)?;
+        Ok(())
+    }
+
+    pub fn warning(&self, term: &mut Terminal, msg: &str) -> io::Result<()> {
+        Report::new(ReportType::Warning, msg, &self).show(term, self.prompt_buffer.area)?;
+        Ok(())
+    }
+    pub fn error(&self, term: &mut Terminal, msg: &str) -> io::Result<()> {
+        Report::new(ReportType::Error, msg, &self).show(term, self.prompt_buffer.area)?;
+        Ok(())
     }
 }
