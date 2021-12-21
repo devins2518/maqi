@@ -1,11 +1,11 @@
 use crate::imap::{error::ImapError, ImapClient};
-use std::io;
+use std::{error, fmt::Display, io};
 
 // Stores connections to IMAP and SMTP servers separately.
 pub struct EmailClient {
     imap: Vec<ImapClient>,
     // TODO
-    smtp: Vec<()>,
+    // smtp
     index: usize,
 }
 
@@ -13,7 +13,6 @@ impl EmailClient {
     pub fn new() -> Self {
         Self {
             imap: Vec::new(),
-            smtp: Vec::new(),
             index: 0,
         }
     }
@@ -24,6 +23,10 @@ impl EmailClient {
         self.imap.push(client);
         self.inc();
         Ok(())
+    }
+
+    pub fn authenticate(&mut self) {
+        unimplemented!()
     }
 
     pub fn login(&mut self, user: &str, pass: &str) -> Result<(), Error> {
@@ -51,7 +54,9 @@ impl EmailClient {
     }
 }
 
+#[derive(Debug)]
 pub enum Error {
+    IO(io::Error),
     ImapError(ImapError),
     // SmtpError(SmtpError)
 }
@@ -64,6 +69,18 @@ impl From<ImapError> for Error {
 
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
-        Self::ImapError(ImapError::IO(e))
+        Self::IO(e)
     }
 }
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let e = match self {
+            Error::IO(e) => format!("IO Error: {}", e),
+            Error::ImapError(e) => format!("IMAP Error: {}", e),
+        };
+        f.write_str(&e)
+    }
+}
+
+impl error::Error for Error {}
