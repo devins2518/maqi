@@ -69,6 +69,7 @@ impl<'a> Application {
         Ok(())
     }
 
+    // TODO: async this
     fn login(&mut self) -> io::Result<()> {
         let user = self
             .ui
