@@ -1,12 +1,10 @@
 use super::parser::Token;
+use unicode_segmentation::UnicodeSegmentation;
 
 pub struct Scanner<'str> {
     // TODO: Change to scan on a stream
     source: &'str str,
     pub tokens: Vec<Token>,
-
-    start: usize,
-    current: usize,
 }
 
 impl<'str> Scanner<'str> {
@@ -14,977 +12,224 @@ impl<'str> Scanner<'str> {
         Self {
             source,
             tokens: Vec::new(),
-            start: 0,
-            current: 0,
         }
     }
 
     pub fn scan_tokens(&mut self) {
-        while !self.is_at_end() {
-            self.start = self.current;
-            self.scan_token();
+        for bound in self.source.split_word_bounds() {
+            println!("\"{}\"", bound);
+            let token = match bound {
+                "$" => Token::DOLLAR,
+                "(" => Token::LPAREN,
+                ")" => Token::RPAREN,
+                "[" => Token::LBRACKET,
+                "]" => Token::RBRACKET,
+                "{" => Token::LBRACE,
+                "}" => Token::RBRACE,
+                "<" => Token::LANGLE,
+                ">" => Token::RANGLE,
+                "+" => Token::PLUS,
+                "/" => Token::FWSLASH,
+                "\\" => Token::BWSLASH,
+                "=" => Token::EQUAL,
+                "==" => Token::DBLEQUAL,
+                "-" => Token::HYPHEN,
+                "\\*" => Token::BWSLASHSTAR,
+                "*" => Token::STAR,
+                "%" => Token::PERCENT,
+                "~{" => Token::APPROXLBRACE,
+                "." => Token::PERIOD,
+                ":" => Token::COLON,
+                "," => Token::COMMA,
+                "_" => Token::UNDERSCORE,
+                "\r\n" => Token::CRLF,
+                "\"" => Token::DQUOTE,
+                " " => Token::SP,
+
+                "ALERT" => Token::Alert,
+                "ALL" => Token::All,
+                "ALREADYEXISTS" => Token::AlreadyExists,
+                "ANSWERED" => Token::Answered,
+                "APPEND" => Token::Append,
+                "APPENDUID" => Token::AppendUID,
+                "APPLICATION" => Token::Application,
+                "Apr" => Token::Apr,
+                "AUDIO" => Token::Audio,
+                "Aug" => Token::Aug,
+                "AUTH" => Token::Auth,
+                "AUTHENTICATE" => Token::Authenticate,
+                "AUTHENTICATIONFAILED" => Token::AuthenticationFailed,
+                "AUTHORIZATIONFAILED" => Token::AuthorizationFailed,
+                "Answered" => Token::BWSlashAnswered,
+                "Deleted" => Token::BWSlashDeleted,
+                "Draft" => Token::BWSlashDraft,
+                "Flagged" => Token::BWSlashFlagged,
+                "HasChildren" => Token::BWSlashHasChildren,
+                "HasNoChildren" => Token::BWSlashHasNoChildren,
+                "Marked" => Token::BWSlashMarked,
+                "Noinferiors" => Token::BWSlashNoInferiors,
+                "Noselect" => Token::BWSlashNoSelect,
+                "NonExistent" => Token::BWSlashNonExistent,
+                "Recent" => Token::BWSlashRecent,
+                "Remote" => Token::BWSlashRemote,
+                "Seen" => Token::BWSlashSeen,
+                "Subscribed" => Token::BWSlashSubscribed,
+                "Unmarked" => Token::BWSlashUnmarked,
+                "BAD" => Token::Bad,
+                "BADCHARSET" => Token::BadCharset,
+                "BASE64" => Token::Base64,
+                "BCC" => Token::Bcc,
+                "BEFORE" => Token::Before,
+                "BINARY" => Token::Binary,
+                "BINARY.SIZE" => Token::BinaryDotSize,
+                "BODY" => Token::Body,
+                "BODY.PEEK" => Token::BodyDotPeek,
+                "BYE" => Token::Bye,
+                "CANNOT" => Token::Cannot,
+                "CAPABILITY" => Token::Capability,
+                "CC" => Token::Cc,
+                "CHARSET" => Token::Charset,
+                "CHILDINFO" => Token::ChildInfo,
+                "CHILDREN" => Token::Children,
+                "CLIENTBUG" => Token::ClientBug,
+                "CLOSE" => Token::Close,
+                "CLOSED" => Token::Closed,
+                "CONTACTADMIN" => Token::ContactAdmin,
+                "COPY" => Token::Copy,
+                "COPYUID" => Token::CopyUID,
+                "CORRUPTION" => Token::Corruption,
+                "COUNT" => Token::Count,
+                "CREATE" => Token::Create,
+                "Dec" => Token::Dec,
+                "DELETE" => Token::Delete,
+                "DELETED" => Token::Deleted,
+                "$Forwarded" => Token::DollarForwarded,
+                "$Junk" => Token::DollarJunk,
+                "$MDNSent" => Token::DollarMDNSent,
+                "$NotJunk" => Token::DollarNotJunk,
+                "$Phishing" => Token::DollarPhishing,
+                "DONE" => Token::Done,
+                ".NOT" => Token::DotNot,
+                ".PEEK" => Token::DotPeek,
+                ".SILENT" => Token::DotSilent,
+                "DRAFT" => Token::Draft,
+                "ESEARCH" => Token::ESearch,
+                "8BIT" => Token::EightBit,
+                "ENABLE" => Token::Enable,
+                "ENABLED" => Token::Enabled,
+                "ENVELOPE" => Token::Envelope,
+                "EXAMINE" => Token::Examine,
+                "EXISTS" => Token::Exists,
+                "EXPIRED" => Token::Expired,
+                "EXPUNGE" => Token::Expunge,
+                "EXPUNGEISSUED" => Token::ExpungeIssued,
+                "FAST" => Token::Fast,
+                "Feb" => Token::Feb,
+                "FETCH" => Token::Fetch,
+                "FLAGGED" => Token::Flagged,
+                "FLAGS" => Token::Flags,
+                "FONT" => Token::Font,
+                "FROM" => Token::From,
+                "FULL" => Token::Full,
+                "GLOBAL" => Token::Global,
+                "HASCHILDREN" => Token::HasChildren,
+                "HEADER" => Token::Header,
+                "HEADER.FIELDS" => Token::HeaderDotFields,
+                "IMAP4rev1" => Token::IMAP4Rev1,
+                "IMAP4rev2" => Token::IMAP4Rev2,
+                "IDLE" => Token::Idle,
+                "IMAGE" => Token::Image,
+                "INUSE" => Token::InUse,
+                "INBOX" => Token::Inbox,
+                "INTERNALDATE" => Token::Internaldate,
+                "Jan" => Token::Jan,
+                "Jul" => Token::Jul,
+                "Jun" => Token::Jun,
+                "KEYWORD" => Token::Keyword,
+                "LARGER" => Token::Larger,
+                "LIMIT" => Token::Limit,
+                "LIST" => Token::List,
+                "LOGIN" => Token::Login,
+                "LOGOUT" => Token::Logout,
+                "Mar" => Token::Mar,
+                "MAX" => Token::Max,
+                "May" => Token::May,
+                "MESSAGE" => Token::Message,
+                "MESSAGES" => Token::Messages,
+                "MIME" => Token::Mime,
+                "MIN" => Token::Min,
+                "MODEL" => Token::Model,
+                "MOVE" => Token::Move,
+                "NAMESPACE" => Token::Namespace,
+                "NIL" => Token::Nil,
+                "NO" => Token::No,
+                "NOPERM" => Token::NoPerm,
+                "NONEXISTENT" => Token::NonExistent,
+                "NOOP" => Token::Noop,
+                "NOTSAVED" => Token::NotSaved,
+                "Nov" => Token::Nov,
+                "Oct" => Token::Oct,
+                "OK" => Token::Ok,
+                "OLDNAME" => Token::OldName,
+                "ON" => Token::On,
+                "OR" => Token::Or,
+                "OVERQUOTA" => Token::OverQuota,
+                "PARSE" => Token::Parse,
+                "PERMANENTFLAGS" => Token::PermanentFlags,
+                "PREAUTH" => Token::PreAuth,
+                "PRIVACYREQUIRED" => Token::PrivacyRequired,
+                "QUOTE-PRINTABLE" => Token::QuotedPrintable,
+                "RFC822" => Token::RFC822,
+                "RFC822.SIZE" => Token::RFC822DotSize,
+                "READ" => Token::Read,
+                "WRITE" => Token::Write,
+                "ONLY" => Token::Only,
+                "RECURSIVEMATCH" => Token::RecursiveMatch,
+                "REMOTE" => Token::Remote,
+                "RETURN" => Token::Return,
+                "SAVE" => Token::Save,
+                "SEARCH" => Token::Search,
+                "SEEN" => Token::Seen,
+                "SELECT" => Token::Select,
+                "SENTBEFORE" => Token::SentBefore,
+                "SENTON" => Token::SentOn,
+                "SENTSINCE" => Token::SentSince,
+                "Sep" => Token::Sep,
+                "SERVERBUG" => Token::ServerBug,
+                "7BIT" => Token::SevenBit,
+                "SINCE" => Token::Since,
+                "SIZE" => Token::Size,
+                "SMALLER" => Token::Smaller,
+                "STARTTLS" => Token::StartTLS,
+                "STATUS" => Token::Status,
+                "STORE" => Token::Store,
+                "STRUCTURE" => Token::Structure,
+                "SUBJECT" => Token::Subject,
+                "SUBSCRIBED" => Token::Subscribed,
+                "TAG" => Token::Tag,
+                "TEXT" => Token::Text,
+                "TO" => Token::To,
+                "TRYCREATE" => Token::TryCreate,
+                "UID" => Token::UID,
+                "UIDNEXT" => Token::UIDNext,
+                "UIDNOTSTICKY" => Token::UIDNotSticky,
+                "UIDVALIDITY" => Token::UIDValidity,
+                "UNANSWERED" => Token::Unanswered,
+                "UNAVAILABLE" => Token::Unavailable,
+                "UNDELETED" => Token::Undeleted,
+                "UNDRAFT" => Token::Undraft,
+                "UNFLAGGED" => Token::Unflagged,
+                "UNKEYWORD" => Token::Unkeyword,
+                "UNKNOWN-CTE" => Token::UnknownHyphenCTE,
+                "UNSEEN" => Token::Unseen,
+                "UNSELECT" => Token::Unselect,
+                "UNSUBSCRIBE" => Token::Unsubscribe,
+                "vender." => Token::VenderDot,
+                "VIDEO" => Token::Video,
+                _ => Token::Other(String::from(bound)),
+            };
+            self.tokens.push(token);
         }
-    }
-
-    fn is_at_end(&self) -> bool {
-        self.current >= self.source.len()
-    }
-
-    fn scan_token(&mut self) {
-        let c = self.advance();
-
-        let t = match c {
-            '$' => {
-                if !self.is_alphanumeric() {
-                    Token::DOLLAR
-                } else {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'F' => Token::DollarForwarded,
-                        'J' => Token::DollarJunk,
-                        'M' => Token::DollarMDNSent,
-                        'N' => Token::DollarNotJunk,
-                        'P' => Token::DollarPhishing,
-                        _ => self.other(),
-                    }
-                }
-            }
-            '(' => Token::LPAREN,
-            ')' => Token::RPAREN,
-            '[' => Token::LBRACKET,
-            ']' => Token::RBRACKET,
-            '{' => Token::LBRACE,
-            '}' => Token::RBRACE,
-            '<' => Token::LANGLE,
-            '>' => Token::RANGLE,
-            '+' => Token::PLUS,
-            '/' => Token::FWSLASH,
-            '\\' => {
-                if self.next('*') {
-                    Token::BWSLASHSTAR
-                } else {
-                    if !self.is_alphanumeric() {
-                        Token::BWSLASH
-                    } else {
-                        match self.advance() {
-                            'A' => {
-                                self.advance_to_next_word();
-                                Token::BWSlashAnswered
-                            }
-                            'D' => {
-                                if self.next('e') {
-                                    self.advance_to_next_word();
-                                    Token::BWSlashDeleted
-                                } else {
-                                    self.advance_to_next_word();
-                                    Token::BWSlashDraft
-                                }
-                            }
-                            'F' => {
-                                self.advance_to_next_word();
-                                Token::BWSlashFlagged
-                            }
-                            'H' => {
-                                self.skip(2);
-                                if self.next('C') {
-                                    self.advance_to_next_word();
-                                    Token::BWSlashHasChildren
-                                } else {
-                                    self.advance_to_next_word();
-                                    Token::BWSlashHasNoChildren
-                                }
-                            }
-                            'M' => {
-                                self.advance_to_next_word();
-                                Token::BWSlashMarked
-                            }
-                            'N' => {
-                                self.skip(1);
-                                let c = self.advance();
-                                self.advance_to_next_word();
-                                match c {
-                                    'i' => Token::BWSlashNoInferiors,
-                                    's' => Token::BWSlashNoSelect,
-                                    'n' => Token::BWSlashNonExistent,
-                                    _ => unreachable!(),
-                                }
-                            }
-                            'R' => {
-                                self.skip(1);
-                                let c = self.advance();
-                                self.advance_to_next_word();
-                                match c {
-                                    'c' => Token::BWSlashRecent,
-                                    'm' => Token::BWSlashRemote,
-                                    _ => unreachable!(),
-                                }
-                            }
-                            'S' => {
-                                let c = self.advance();
-                                self.advance_to_next_word();
-                                match c {
-                                    'e' => Token::BWSlashSeen,
-                                    'u' => Token::BWSlashSubscribed,
-                                    _ => unreachable!(),
-                                }
-                            }
-                            'U' => {
-                                self.advance_to_next_word();
-                                Token::BWSlashUnmarked
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-            }
-            '=' => {
-                if self.next('=') {
-                    Token::DBLEQUAL
-                } else {
-                    Token::EQUAL
-                }
-            }
-            '-' => Token::HYPHEN,
-            '*' => Token::STAR,
-            '%' => Token::PERCENT,
-            // TODO: possibly wrong
-            '~' => Token::APPROXLBRACE,
-            '.' => {
-                if !self.is_alphanumeric() {
-                    Token::PERIOD
-                } else {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'N' => Token::DotNot,
-                        'P' => Token::DotPeek,
-                        'S' => Token::DotSilent,
-                        _ => unreachable!(),
-                    }
-                }
-            }
-            ':' => Token::COLON,
-            ',' => Token::COMMA,
-            '_' => Token::UNDERSCORE,
-            // TODO: possibly wrong
-            '\r' => Token::CRLF,
-            '"' => Token::DQUOTE,
-            ' ' => Token::SP,
-            'A' => match self.advance() {
-                'L' => {
-                    let c = self.peek();
-                    self.advance_to_next_word();
-                    match c {
-                        'E' => Token::Alert,
-                        'L' => Token::All,
-                        'R' => Token::AlreadyExists,
-                        _ => unreachable!(),
-                    }
-                }
-                'N' => {
-                    self.advance_to_next_word();
-                    Token::Answered
-                }
-                'P' => {
-                    self.skip(2);
-                    match self.advance() {
-                        'E' => {
-                            self.skip(2);
-                            let c = self.advance();
-                            self.advance_to_next_word();
-                            match c {
-                                'U' => Token::AppendUID,
-                                _ => Token::Append,
-                            }
-                        }
-                        'L' => {
-                            self.advance_to_next_word();
-                            Token::Application
-                        }
-                        _ => unreachable!(),
-                    }
-                }
-                'p' => {
-                    self.advance_to_next_word();
-                    Token::Apr
-                }
-                'U' => match self.advance() {
-                    'D' => {
-                        self.advance_to_next_word();
-                        Token::Audio
-                    }
-                    'T' => {
-                        self.skip(1);
-                        match self.advance() {
-                            '=' => Token::AuthEq(self.get_next_word()),
-                            'E' => {
-                                self.skip(7);
-                                let c = self.advance();
-                                self.advance_to_next_word();
-                                match c {
-                                    'E' => Token::Authenticate,
-                                    'I' => Token::AuthenticationFailed,
-                                    _ => unreachable!(),
-                                }
-                            }
-                            'O' => {
-                                self.advance_to_next_word();
-                                Token::AuthorizationFailed
-                            }
-                            x => unreachable!("found {}", x),
-                        }
-                    }
-                    _ => unreachable!(),
-                },
-                'u' => {
-                    self.advance_to_next_word();
-                    Token::Aug
-                }
-                _ => self.other(),
-            },
-            'B' => match self.advance() {
-                'A' => match self.advance() {
-                    'D' => {
-                        if self.is_alphanumeric() {
-                            self.advance_to_next_word();
-                            Token::BadCharset
-                        } else {
-                            self.advance_to_next_word();
-                            Token::Bad
-                        }
-                    }
-                    'S' => {
-                        self.advance_to_next_word();
-                        Token::Base64
-                    }
-                    _ => self.other(),
-                },
-                'C' => {
-                    self.advance_to_next_word();
-                    Token::Bcc
-                }
-                'E' => {
-                    self.advance_to_next_word();
-                    Token::Before
-                }
-                'I' => {
-                    self.skip(4);
-                    if self.next('.') {
-                        self.advance_to_next_word();
-                        Token::BinaryDotSize
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Binary
-                    }
-                }
-                'O' => {
-                    self.skip(2);
-                    if self.next('.') {
-                        self.advance_to_next_word();
-                        Token::BodyDotPeek
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Body
-                    }
-                }
-                'Y' => {
-                    self.advance_to_next_word();
-                    Token::Bye
-                }
-                _ => unreachable!(),
-            },
-            'C' => match self.advance() {
-                'A' => {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'N' => Token::Cannot,
-                        'P' => Token::Capability,
-                        _ => unreachable!(),
-                    }
-                }
-                'C' => {
-                    self.advance_to_next_word();
-                    Token::Cc
-                }
-                'H' => match self.advance() {
-                    'A' => {
-                        self.advance_to_next_word();
-                        Token::Charset
-                    }
-                    'I' => {
-                        self.skip(2);
-                        let c = self.advance();
-                        self.advance_to_next_word();
-                        match c {
-                            'I' => Token::ChildInfo,
-                            'R' => Token::Children,
-                            _ => unreachable!(),
-                        }
-                    }
-                    _ => unreachable!(),
-                },
-                'L' => match self.advance() {
-                    'I' => {
-                        self.advance_to_next_word();
-                        Token::ClientBug
-                    }
-                    'O' => {
-                        self.skip(2);
-                        if self.next('D') {
-                            self.advance_to_next_word();
-                            Token::Closed
-                        } else {
-                            self.advance_to_next_word();
-                            Token::Close
-                        }
-                    }
-                    _ => unreachable!(),
-                },
-                'O' => match self.advance() {
-                    'N' => {
-                        self.advance_to_next_word();
-                        Token::ContactAdmin
-                    }
-                    'P' => {
-                        self.skip(2);
-                        if self.next('U') {
-                            self.advance_to_next_word();
-                            Token::CopyUID
-                        } else {
-                            self.advance_to_next_word();
-                            Token::Copy
-                        }
-                    }
-                    'R' => {
-                        self.advance_to_next_word();
-                        Token::Corruption
-                    }
-                    'U' => {
-                        self.advance_to_next_word();
-                        Token::Count
-                    }
-                    _ => unreachable!(),
-                },
-                'R' => {
-                    self.advance_to_next_word();
-                    Token::Create
-                }
-                _ => unreachable!(),
-            },
-            'D' => match self.advance() {
-                'e' => {
-                    self.advance_to_next_word();
-                    Token::Dec
-                }
-                'E' => {
-                    self.skip(4);
-                    if self.next('D') {
-                        self.advance_to_next_word();
-                        Token::Deleted
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Delete
-                    }
-                }
-                'O' => {
-                    self.advance_to_next_word();
-                    Token::Done
-                }
-                'R' => {
-                    self.advance_to_next_word();
-                    Token::Draft
-                }
-                _ => unreachable!(),
-            },
-            'E' => match self.advance() {
-                'S' => {
-                    self.advance_to_next_word();
-                    Token::ESearch
-                }
-                'N' => match self.advance() {
-                    'A' => {
-                        self.skip(3);
-                        if self.next('D') {
-                            Token::Enabled
-                        } else {
-                            Token::Enable
-                        }
-                    }
-                    'V' => {
-                        self.advance_to_next_word();
-                        Token::Envelope
-                    }
-                    _ => unreachable!(),
-                },
-                'X' => match self.advance() {
-                    'A' => {
-                        self.advance_to_next_word();
-                        Token::Examine
-                    }
-                    'I' => {
-                        self.advance_to_next_word();
-                        Token::Exists
-                    }
-                    'P' => match self.advance() {
-                        'I' => {
-                            self.advance_to_next_word();
-                            Token::Expired
-                        }
-                        'U' => {
-                            self.skip(3);
-                            if self.next('I') {
-                                self.advance_to_next_word();
-                                Token::ExpungeIssued
-                            } else {
-                                self.advance_to_next_word();
-                                Token::Expunge
-                            }
-                        }
-                        _ => unreachable!(),
-                    },
-                    _ => unreachable!(),
-                },
-                _ => unreachable!(),
-            },
-            'F' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Fast
-                }
-                'e' => {
-                    self.advance_to_next_word();
-                    Token::Feb
-                }
-                'E' => {
-                    self.advance_to_next_word();
-                    Token::Fetch
-                }
-                'L' => {
-                    self.skip(2);
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'G' => Token::Flagged,
-                        'S' => Token::Flags,
-                        _ => unreachable!(),
-                    }
-                }
-                'O' => {
-                    self.advance_to_next_word();
-                    Token::Font
-                }
-                'R' => {
-                    self.advance_to_next_word();
-                    Token::From
-                }
-                'U' => {
-                    self.advance_to_next_word();
-                    Token::Full
-                }
-                _ => unreachable!(),
-            },
-            'G' => {
-                self.advance_to_next_word();
-                Token::Global
-            }
-            'H' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::HasChildren
-                }
-                'E' => {
-                    self.advance_to_next_word();
-                    // TODO: maybe wrong
-                    if self.next('.') {
-                        Token::HeaderDotFields
-                    } else {
-                        Token::Header
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'I' => match self.advance() {
-                'M' => {
-                    self.skip(1);
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        // TODO: match for IMAP4Rev1
-                        'P' => Token::IMAP4Rev2,
-                        'G' => Token::Image,
-                        _ => unreachable!(),
-                    }
-                }
-                'D' => {
-                    self.advance_to_next_word();
-                    Token::Idle
-                }
-                'N' => {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'U' => Token::InUse,
-                        'B' => Token::Inbox,
-                        'T' => Token::Internaldate,
-                        _ => unreachable!(),
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'J' => {
-                let c = self.advance();
-                let n = self.advance();
-                match (c, n) {
-                    ('a', 'n') => Token::Jan,
-                    ('u', 'l') => Token::Jul,
-                    ('u', 'n') => Token::Jun,
-                    _ => unreachable!(),
-                }
-            }
-            'K' => {
-                self.advance_to_next_word();
-                Token::Keyword
-            }
-            'L' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Larger
-                }
-                'I' => {
-                    if self.next('M') {
-                        self.advance_to_next_word();
-                        Token::Limit
-                    } else {
-                        self.advance_to_next_word();
-                        Token::List
-                    }
-                }
-                'O' => {
-                    self.skip(1);
-                    if self.next('I') {
-                        self.advance_to_next_word();
-                        Token::Login
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Logout
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'M' => match self.advance() {
-                'a' => {
-                    if self.next('r') {
-                        self.advance_to_next_word();
-                        Token::Mar
-                    } else {
-                        self.advance_to_next_word();
-                        Token::May
-                    }
-                }
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Max
-                }
-                'E' => {
-                    self.skip(5);
-                    if self.next('S') {
-                        self.advance_to_next_word();
-                        Token::Messages
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Message
-                    }
-                }
-                'I' => {
-                    if self.next('M') {
-                        self.advance_to_next_word();
-                        Token::Mime
-                    } else {
-                        self.advance_to_next_word();
-                        Token::Min
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'N' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Namespace
-                }
-                'I' => {
-                    self.advance_to_next_word();
-                    Token::Nil
-                }
-                'O' => {
-                    if self.next('P') {
-                        self.advance_to_next_word();
-                        Token::NoPerm
-                    } else if self.next('N') {
-                        self.advance_to_next_word();
-                        Token::NonExistent
-                    } else if self.next('O') {
-                        self.advance_to_next_word();
-                        Token::Noop
-                    } else if self.next('T') {
-                        self.advance_to_next_word();
-                        Token::NotSaved
-                    } else {
-                        self.advance_to_next_word();
-                        Token::No
-                    }
-                }
-                'o' => {
-                    self.advance_to_next_word();
-                    Token::Nov
-                }
-                _ => unreachable!(),
-            },
-            'O' => {
-                let c = self.advance();
-                self.advance_to_next_word();
-                match c {
-                    'c' => Token::Oct,
-                    'K' => Token::Ok,
-                    'L' => Token::OldName,
-                    'N' => Token::On,
-                    'R' => Token::Or,
-                    'V' => Token::OverQuota,
-                    _ => unreachable!(),
-                }
-            }
-            'P' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Parse
-                }
-                'E' => {
-                    self.advance_to_next_word();
-                    Token::PermanentFlags
-                }
-                'R' => {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'E' => Token::PreAuth,
-                        'I' => Token::PrivacyRequired,
-                        _ => unreachable!(),
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'Q' => {
-                self.advance_to_next_word();
-                Token::QuotedPrintable
-            }
-            'R' => match self.advance() {
-                'F' => {
-                    self.advance_to_next_word();
-                    if self.next('.') {
-                        self.advance_to_next_word();
-                        Token::RFC822DotSize
-                    } else {
-                        Token::RFC822
-                    }
-                }
-                'E' => match self.advance() {
-                    'A' => {
-                        self.advance_to_next_word();
-                        self.skip(1);
-                        if self.next('O') {
-                            self.advance_to_next_word();
-                            Token::ReadHyphenOnly
-                        } else {
-                            self.advance_to_next_word();
-                            Token::ReadHyphenWrite
-                        }
-                    }
-                    'C' => {
-                        self.advance_to_next_word();
-                        Token::RecursiveMatch
-                    }
-                    'M' => {
-                        self.advance_to_next_word();
-                        Token::Remote
-                    }
-                    'T' => {
-                        self.advance_to_next_word();
-                        Token::Return
-                    }
-                    _ => unreachable!(),
-                },
-                _ => unreachable!(),
-            },
-            'S' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Save
-                }
-                'E' => match self.advance() {
-                    'A' => {
-                        self.advance_to_next_word();
-                        Token::Search
-                    }
-                    'E' => {
-                        self.advance_to_next_word();
-                        Token::Seen
-                    }
-                    'L' => {
-                        self.advance_to_next_word();
-                        Token::Select
-                    }
-                    'N' => {
-                        self.skip(1);
-                        let c = self.advance();
-                        self.advance_to_next_word();
-                        match c {
-                            'B' => Token::SentBefore,
-                            'O' => Token::SentOn,
-                            'S' => Token::SentSince,
-                            _ => unreachable!(),
-                        }
-                    }
-                    'R' => {
-                        self.advance_to_next_word();
-                        Token::ServerBug
-                    }
-                    _ => unreachable!(),
-                },
-                'e' => {
-                    self.advance_to_next_word();
-                    Token::Sep
-                }
-                'I' => {
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'N' => Token::Since,
-                        'Z' => Token::Size,
-                        _ => unreachable!(),
-                    }
-                }
-                'M' => {
-                    self.advance_to_next_word();
-                    Token::Smaller
-                }
-                'T' => match self.advance() {
-                    'A' => {
-                        let c = self.advance();
-                        self.advance_to_next_word();
-                        match c {
-                            'R' => Token::StartTLS,
-                            'T' => Token::Status,
-                            _ => unreachable!(),
-                        }
-                    }
-                    'O' => {
-                        self.advance_to_next_word();
-                        Token::Store
-                    }
-                    'R' => {
-                        self.advance_to_next_word();
-                        Token::Structure
-                    }
-                    _ => unreachable!(),
-                },
-                'U' => {
-                    self.skip(1);
-                    let c = self.advance();
-                    self.advance_to_next_word();
-                    match c {
-                        'J' => Token::Subject,
-                        'S' => Token::Subscribed,
-                        _ => unreachable!(),
-                    }
-                }
-                _ => unreachable!(),
-            },
-            'T' => match self.advance() {
-                'A' => {
-                    self.advance_to_next_word();
-                    Token::Tag
-                }
-                'E' => {
-                    self.advance_to_next_word();
-                    Token::Text
-                }
-                'O' => {
-                    self.advance_to_next_word();
-                    Token::To
-                }
-                'R' => {
-                    self.advance_to_next_word();
-                    Token::TryCreate
-                }
-                _ => unreachable!(),
-            },
-            'U' => match self.advance() {
-                'I' => {
-                    self.skip(1);
-                    if self.next('N') {
-                        match self.advance() {
-                            'E' => {
-                                self.advance_to_next_word();
-                                Token::UIDNext
-                            }
-                            'O' => {
-                                self.advance_to_next_word();
-                                Token::UIDNotSticky
-                            }
-                            _ => unreachable!(),
-                        }
-                    } else if self.next('V') {
-                        self.advance_to_next_word();
-                        Token::UIDValidity
-                    } else {
-                        self.advance_to_next_word();
-                        Token::UID
-                    }
-                }
-                'N' => match self.advance() {
-                    'A' => {
-                        if self.next('N') {
-                            self.advance_to_next_word();
-                            Token::Unanswered
-                        } else {
-                            self.advance_to_next_word();
-                            Token::Unavailable
-                        }
-                    }
-                    'D' => {
-                        if self.next('E') {
-                            self.advance_to_next_word();
-                            Token::Undeleted
-                        } else {
-                            self.advance_to_next_word();
-                            Token::Undraft
-                        }
-                    }
-                    'F' => {
-                        self.advance_to_next_word();
-                        Token::Unflagged
-                    }
-                    'K' => {
-                        if self.next('E') {
-                            self.advance_to_next_word();
-                            Token::Unkeyword
-                        } else {
-                            self.advance_to_next_word();
-                            Token::UnknownHyphenCTE
-                        }
-                    }
-                    'S' => {
-                        self.skip(1);
-                        let c = self.advance();
-                        self.advance_to_next_word();
-                        match c {
-                            'E' => Token::Unseen,
-                            'L' => Token::Unselect,
-                            'B' => Token::Unsubscribe,
-                            _ => unreachable!(),
-                        }
-                    }
-                    _ => unreachable!(),
-                },
-                _ => unreachable!(),
-            },
-            'v' => {
-                self.advance_to_next_word();
-                self.skip(1);
-                Token::VenderDot
-            }
-            'V' => {
-                self.advance_to_next_word();
-                Token::Video
-            }
-            '7' => {
-                self.advance_to_next_word();
-                Token::SevenBit
-            }
-            '8' => {
-                self.advance_to_next_word();
-                Token::EightBit
-            }
-            _ => self.other(),
-        };
-
-        self.tokens.push(t);
-    }
-
-    fn advance(&mut self) -> char {
-        let c = self.source.chars().nth(self.current).unwrap();
-        self.current += 1;
-        c
-    }
-
-    fn skip(&mut self, n: usize) {
-        self.current += n;
-    }
-
-    fn other(&mut self) -> Token {
-        // Go back to beginning
-        while let Some(c) = self.source.chars().nth(self.current) {
-            if self.current == 0 {
-                break;
-            } else if c != ' ' {
-                self.current -= 1;
-            } else {
-                self.skip(1);
-                break;
-            }
-        }
-        Token::Other(self.get_next_word())
-    }
-
-    fn next(&mut self, expected: char) -> bool {
-        if self.is_at_end() {
-            false
-        } else {
-            if let Some(x) = self.source.chars().nth(self.current) {
-                if x != expected {
-                    false
-                } else {
-                    self.current += 1;
-                    true
-                }
-            } else {
-                false
-            }
-        }
-    }
-
-    fn peek(&self) -> char {
-        if self.is_at_end() {
-            '\0'
-        } else {
-            self.source.chars().nth(self.current).unwrap()
-        }
-    }
-
-    fn advance_to_next_word(&mut self) {
-        while self.is_alphanumeric() {
-            self.skip(1);
-        }
-    }
-
-    fn is_alphanumeric(&self) -> bool {
-        if let Some(x) = self.source.chars().nth(self.current) {
-            x.is_alphanumeric()
-        } else {
-            false
-        }
-    }
-
-    fn get_next_word(&mut self) -> String {
-        let current = self.current;
-        self.advance_to_next_word();
-        let diff = self.current - current;
-        self.source
-            .chars()
-            .skip(current)
-            .take(diff)
-            .collect::<String>()
     }
 }
 
@@ -1016,7 +261,9 @@ mod test {
                 Token::SP,
                 Token::StartTLS,
                 Token::SP,
-                Token::AuthEq(String::from("GSSAPI")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("GSSAPI")),
                 Token::RBRACKET,
             ],
             vec![
@@ -1035,9 +282,13 @@ mod test {
                 Token::SP,
                 Token::IMAP4Rev2,
                 Token::SP,
-                Token::AuthEq(String::from("GSSAPI")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("GSSAPI")),
                 Token::SP,
-                Token::AuthEq(String::from("PLA")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("PLA")),
             ],
             vec![
                 Token::STAR,
@@ -1045,14 +296,19 @@ mod test {
                 Token::Flags,
                 Token::SP,
                 Token::LPAREN,
+                Token::BWSLASH,
                 Token::BWSlashAnswered,
                 Token::SP,
+                Token::BWSLASH,
                 Token::BWSlashFlagged,
                 Token::SP,
+                Token::BWSLASH,
                 Token::BWSlashDeleted,
                 Token::SP,
+                Token::BWSLASH,
                 Token::BWSlashSeen,
                 Token::SP,
+                Token::BWSLASH,
                 Token::BWSlashDraft,
                 Token::RPAREN,
             ],
@@ -1076,7 +332,9 @@ mod test {
                 Token::Ok,
                 Token::SP,
                 Token::LBRACKET,
-                Token::ReadHyphenOnly,
+                Token::Read,
+                Token::HYPHEN,
+                Token::Only,
                 Token::RBRACKET,
                 Token::SP,
                 Token::Examine,
@@ -1100,25 +358,45 @@ mod test {
                 Token::SP,
                 Token::Other(String::from("ID")),
                 Token::SP,
-                Token::Other(String::from("XList")),
+                Token::Other(String::from("XLIST")),
                 Token::SP,
                 Token::Children,
                 Token::SP,
-                Token::Other(String::from("X-GM-EXT-1")),
+                Token::Other(String::from("X")),
+                Token::HYPHEN,
+                Token::Other(String::from("GM")),
+                Token::HYPHEN,
+                Token::Other(String::from("EXT")),
+                Token::HYPHEN,
+                Token::Other(String::from("1")),
                 Token::SP,
                 Token::Other(String::from("XYZZY")),
                 Token::SP,
-                Token::Other(String::from("SASL-IR")),
+                Token::Other(String::from("SASL")),
+                Token::HYPHEN,
+                Token::Other(String::from("IR")),
                 Token::SP,
-                Token::AuthEq(String::from("XOAUTH2")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("XOAUTH2")),
                 Token::SP,
-                Token::AuthEq(String::from("PLAIN")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("PLAIN")),
                 Token::SP,
-                Token::AuthEq(String::from("PLAIN-CLIENTTOKEN")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("PLAIN")),
+                Token::HYPHEN,
+                Token::Other(String::from("CLIENTTOKEN")),
                 Token::SP,
-                Token::AuthEq(String::from("OAUTHBEARER")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("OAUTHBEARER")),
                 Token::SP,
-                Token::AuthEq(String::from("XOAUTH")),
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("XOAUTH")),
             ],
         ];
 
@@ -1136,6 +414,13 @@ mod test {
         let mut scanner = Scanner::new(rs);
         scanner.scan_tokens();
 
-        assert_eq!(scanner.tokens, vec![Token::AuthEq(String::from("GSSAPI"))]);
+        assert_eq!(
+            scanner.tokens,
+            vec![
+                Token::Auth,
+                Token::EQUAL,
+                Token::Other(String::from("GSSAPI"))
+            ]
+        );
     }
 }

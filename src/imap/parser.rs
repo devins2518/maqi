@@ -39,7 +39,7 @@ pub enum Token {
     Apr,                  // Apr
     Audio,                // AUDIO
     Aug,                  // Aug
-    AuthEq(String),       // AUTH=
+    Auth,                 // AUTH=
     Authenticate,         // AUTHENTICATE
     AuthenticationFailed, // AUTHENTICATIONFAILED
     AuthorizationFailed,  // AUTHORIZATIONFAILED
@@ -164,8 +164,9 @@ pub enum Token {
     QuotedPrintable,      // QUOTE-PRINTABLE
     RFC822,               // RFC822
     RFC822DotSize,        // RFC822.SIZE
-    ReadHyphenOnly,       // READ-ONLY
-    ReadHyphenWrite,      // READ-WRITE
+    Read,                 // READ
+    Only,                 // ONLY
+    Write,                // WRITE
     RecursiveMatch,       // RECURSIVEMATCH
     Remote,               // REMOTE
     Return,               // RETURN
