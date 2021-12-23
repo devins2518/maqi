@@ -1,16 +1,19 @@
-#![allow(unused)]
+use crate::imap::error::Result as IResult;
 
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
 
+use log::debug;
+
 use super::error::ImapError;
-use super::parser::Token;
 use super::scanner::Scanner;
+use super::tokens::Token;
 
 #[derive(Debug, PartialEq, Eq)]
 enum Tag {
     Real(TagRepr),
-    Continuation,
+    ServerContinuation,
+    ClientContinuation,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -61,7 +64,7 @@ impl Display for TagRepr {
     }
 }
 
-pub enum Command {
+pub enum Command<'a> {
     // Any state
     Capability,
     Noop,
@@ -70,7 +73,7 @@ pub enum Command {
     StartTLS,
     Authenticate,
     //    user    pass
-    Login(String, String),
+    Login(&'a str, &'a str),
     // Auth state
     Enable,
     Select,
@@ -97,14 +100,14 @@ pub enum Command {
     UID,
 }
 
-impl Command {
-    pub fn check(&self, state: &State) -> Option<ImapError> {
+impl<'a> Command<'a> {
+    pub fn check(&self, state: &State) -> IResult<()> {
         match (self, state) {
-            (Command::Capability | Command::Noop | Command::Logout, _) => None,
+            (Command::Capability | Command::Noop | Command::Logout, _) => Ok(()),
             (
                 Command::StartTLS | Command::Authenticate | Command::Login(_, _),
                 State::NotAuthenticated,
-            ) => None,
+            ) => Ok(()),
             (
                 Command::Enable
                 | Command::Select
@@ -120,7 +123,7 @@ impl Command {
                 | Command::Append
                 | Command::Idle,
                 State::Authenticated,
-            ) => None,
+            ) => Ok(()),
             (
                 Command::Close
                 | Command::Unselect
@@ -132,13 +135,13 @@ impl Command {
                 | Command::Move
                 | Command::UID,
                 State::Selected,
-            ) => None,
-            _ => Some(ImapError::InvalidState),
+            ) => Ok(()),
+            _ => Err(ImapError::InvalidState),
         }
     }
 }
 
-impl Display for Command {
+impl<'a> Display for Command<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO: possible to remove allocations
         let s = match self {
@@ -217,17 +220,16 @@ const RESPONSE_CODE_STR: [&str; 38] = [
 ];
 
 #[derive(Debug, PartialEq, Eq)]
-enum ImapResult {
-    ImapOk(ImapOk),
-    ImapError(ImapErrorInternal),
-}
-
-#[derive(Debug, PartialEq, Eq)]
 pub struct ServerResponse {
     tag: Tag,
-    result: ImapResult,
-    response_code: Option<ResponseCode>,
-    msg: Option<String>,
+    response: ImapResponse,
+    msg: Option<Vec<Token>>,
+}
+
+impl ServerResponse {
+    pub fn is_continuation(&self) -> bool {
+        self.tag == Tag::ServerContinuation
+    }
 }
 
 impl<T> From<T> for ServerResponse
@@ -237,37 +239,67 @@ where
     fn from(s: T) -> Self {
         let mut scanner = Scanner::new(s.as_ref());
         scanner.scan_tokens();
-        let mut iter = scanner.tokens.iter();
-        let tag = match iter.next().unwrap() {
-            Token::STAR => Tag::Continuation,
-            Token::PLUS => Tag::Continuation,
+        let mut iter = scanner.tokens.into_iter().peekable();
+        let tag;
+        let response;
+        tag = match iter.next().unwrap() {
+            Token::STAR => Tag::ServerContinuation,
+            Token::PLUS => Tag::ClientContinuation,
             Token::Other(t) => Tag::Real(TagRepr::from(t)),
             _ => unreachable!(),
         };
-        let result = todo!();
-        let response_code = todo!();
-        let msg = todo!();
+        let _ = iter.next(); // Skip space after response
+        response = if tag == Tag::ServerContinuation {
+            ImapResponse::Continuation
+        } else {
+            match iter.next().unwrap() {
+                Token::Ok => ImapResponse::Ok,
+                Token::No => ImapResponse::No,
+                Token::Bad => ImapResponse::Bad,
+                Token::PreAuth => ImapResponse::Preauth,
+                Token::Bye => ImapResponse::Bye,
+                Token::Enabled => ImapResponse::Enabled,
+                Token::Capability => ImapResponse::Capability,
+                Token::List => ImapResponse::List,
+                Token::Namespace => ImapResponse::Namespace,
+                Token::Status => ImapResponse::Status,
+                Token::ESearch => ImapResponse::Esearch,
+                Token::Flags => ImapResponse::Flags,
+                Token::Other(n) => ImapResponse::Size(n.parse().unwrap()),
+                _ => unreachable!(),
+            }
+        };
+        let _ = iter.next();
+        let msg = if let Some(_) = iter.peek() {
+            Some(iter.collect())
+        } else {
+            None
+        };
 
-        Self {
-            tag,
-            result,
-            response_code,
-            msg,
-        }
+        Self { tag, response, msg }
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum ImapOk {
+enum ImapResponse {
+    Continuation,
+    // Generic
     Ok,
-    Preauth,
-    Bye,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-enum ImapErrorInternal {
     No,
     Bad,
+    Preauth,
+    Bye,
+    // ServerStatus
+    Enabled,
+    Capability,
+    // MailboxStatus
+    List,
+    Namespace,
+    Status,
+    Esearch,
+    Flags,
+    // MailboxSize
+    Size(usize),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -283,6 +315,7 @@ enum ResponseCode {
     Capability,
     ClientBug,
     Closed,
+    Completed,
     ContactAdmin,
     CopyUid,
     Corruption,
@@ -337,5 +370,94 @@ mod test {
             t.inc();
         }
         assert_eq!(String::from("A0001"), format!("{}", t));
+    }
+
+    #[test]
+    fn test_server_responses() {
+        let rs = [
+            "* CAPABILITY XAPPLEPUSHSERVICE IMAP4 IMAP4rev1 SASL-IR AUTH=ATOKEN AUTH=PLAIN",
+            "A001 OK Completed",
+            "* BYE",
+            "A002 OK",
+            "A003 NO [AUTHENTICATIONFAILED] Authentication Failed",
+            "A003 OK user drsingh2518 logged in",
+            "* 23 EXISTS",
+        ];
+        let sr = [
+            ServerResponse {
+                tag: Tag::ServerContinuation,
+                response: ImapResponse::Capability,
+                msg: Some(vec![
+                    Token::Other(String::from("XAPPLEPUSHSERVICE")),
+                    Token::SP,
+                    Token::Other(String::from("IMAP4")),
+                    Token::SP,
+                    Token::IMAP4Rev1,
+                    Token::SP,
+                    Token::Other(String::from("SASL")),
+                    Token::HYPHEN,
+                    Token::Other(String::from("IR")),
+                    Token::SP,
+                    Token::Auth,
+                    Token::EQUAL,
+                    Token::Other(String::from("ATOKEN")),
+                    Token::SP,
+                    Token::Auth,
+                    Token::EQUAL,
+                    Token::Other(String::from("PLAIN")),
+                ]),
+            },
+            ServerResponse {
+                tag: Tag::Real(TagRepr::from("A001")),
+                response: ImapResponse::Ok,
+                msg: Some(vec![Token::Other(String::from("Completed"))]),
+            },
+            ServerResponse {
+                tag: Tag::ServerContinuation,
+                response: ImapResponse::Bye,
+                msg: None,
+            },
+            ServerResponse {
+                tag: Tag::Real(TagRepr::from("A002")),
+                response: ImapResponse::Ok,
+                msg: None,
+            },
+            ServerResponse {
+                tag: Tag::Real(TagRepr::from("A003")),
+                response: ImapResponse::No,
+                msg: Some(vec![
+                    Token::LBRACKET,
+                    Token::AuthenticationFailed,
+                    Token::RBRACKET,
+                    Token::SP,
+                    Token::Other(String::from("Authentication")),
+                    Token::SP,
+                    Token::Other(String::from("Failed")),
+                ]),
+            },
+            ServerResponse {
+                tag: Tag::Real(TagRepr::from("A003")),
+                response: ImapResponse::Ok,
+                msg: Some(vec![
+                    Token::Other(String::from("user")),
+                    Token::SP,
+                    Token::Other(String::from("drsingh2518")),
+                    Token::SP,
+                    Token::Other(String::from("logged")),
+                    Token::SP,
+                    Token::Other(String::from("in")),
+                ]),
+            },
+            ServerResponse {
+                tag: Tag::ServerContinuation,
+                response: ImapResponse::Size(23),
+                msg: Some(vec![Token::Exists]),
+            },
+        ];
+
+        for (i, s) in rs.iter().enumerate() {
+            let response = ServerResponse::from(s);
+            assert_eq!(response, sr[i])
+        }
     }
 }

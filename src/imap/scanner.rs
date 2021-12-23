@@ -1,4 +1,4 @@
-use super::parser::Token;
+use super::tokens::Token;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub struct Scanner<'str> {
@@ -17,7 +17,6 @@ impl<'str> Scanner<'str> {
 
     pub fn scan_tokens(&mut self) {
         for bound in self.source.split_word_bounds() {
-            println!("\"{}\"", bound);
             let token = match bound {
                 "$" => Token::DOLLAR,
                 "(" => Token::LPAREN,

@@ -1,11 +1,13 @@
 use crate::{
-    client::EmailClient,
+    client::{EmailClient, Error},
+    imap::error::Result as IResult,
     terminal::Terminal,
-    ui::{self, UI},
+    ui::UI,
+    utils::Provider,
 };
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
 use log::{error, info, warn};
-use std::{error::Error, io};
+use std::io;
 
 pub struct Application {
     terminal: Terminal,
@@ -43,7 +45,11 @@ impl<'a> Application {
                     Key(KeyEvent {
                         code: KeyCode::Char('l'),
                         ..
-                    }) => self.login()?,
+                    }) => {
+                        if let Err(e) = self.login() {
+                            self.error(&e.to_string());
+                        }
+                    }
                     _ => {}
                 }
             };
@@ -70,19 +76,15 @@ impl<'a> Application {
     }
 
     // TODO: async this
-    fn login(&mut self) -> io::Result<()> {
+    fn login(&mut self) -> Result<(), Error> {
         let user = self
             .ui
             .prompt(&mut self.terminal, "Please enter username: ");
         let pass = self
             .ui
             .prompt(&mut self.terminal, "Please enter password: ");
-        if let Err(e) = self
-            .email_client
-            .new_mailbox("imap.gmail.com:993", "smtp.gmail.com:587")
-        {
-            self.error(&e.to_string()).unwrap();
-        }
+        self.email_client.new_mailbox(Provider::ICloud)?;
+        self.email_client.login(&user, &pass)?;
         info!("user {}", user);
         info!("pass {}", pass);
         Ok(())

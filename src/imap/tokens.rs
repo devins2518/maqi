@@ -118,6 +118,7 @@ pub enum Token {
     HasChildren,          // HASCHILDREN
     Header,               // HEADER
     HeaderDotFields,      // HEADER.FIELDS
+    IMAP4,                // IMAP4
     IMAP4Rev1,            // IMAP4rev1
     IMAP4Rev2,            // IMAP4rev2
     Idle,                 // IDLE

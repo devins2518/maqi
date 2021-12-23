@@ -50,6 +50,12 @@ impl<'msg, 'ui> Prompt<'msg, 'ui> {
                         code: KeyCode::Char(c),
                         ..
                     }) => self.response.push(c),
+                    Key(KeyEvent {
+                        code: KeyCode::Backspace,
+                        ..
+                    }) => {
+                        self.response.pop();
+                    }
                     _ => (),
                 };
             }

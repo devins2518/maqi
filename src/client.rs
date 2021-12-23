@@ -1,4 +1,9 @@
-use crate::imap::{error::ImapError, ImapClient};
+use log::debug;
+
+use crate::{
+    imap::{error::ImapError, ImapClient},
+    utils::Provider,
+};
 use std::{error, fmt::Display, io};
 
 // Stores connections to IMAP and SMTP servers separately.
@@ -17,11 +22,13 @@ impl EmailClient {
         }
     }
 
-    pub fn new_mailbox(&mut self, imap: &str, _smtp: &str) -> Result<(), Error> {
+    pub fn new_mailbox(&mut self, provider: Provider) -> Result<(), Error> {
+        let (imap, _smtp) = provider.get_addresses();
         let mut split = imap.split(':').take(2);
         let client = ImapClient::new(split.next().unwrap(), split.next().unwrap())?;
         self.imap.push(client);
         self.inc();
+        // TODO: SMTP
         Ok(())
     }
 
@@ -30,7 +37,8 @@ impl EmailClient {
     }
 
     pub fn login(&mut self, user: &str, pass: &str) -> Result<(), Error> {
-        unimplemented!()
+        self.imap[self.index].login(user, pass)?;
+        Ok(())
     }
 
     fn inc(&mut self) {
@@ -44,21 +52,13 @@ impl EmailClient {
     fn set(&mut self, n: usize) {
         self.index = n;
     }
-
-    fn init(&mut self) -> Result<(), Error> {
-        let user = std::env::var("EMAIL_USER").unwrap_or(String::from(""));
-        let pass = std::env::var("EMAIL_PASS").unwrap_or(String::from(""));
-        self.imap[self.index].init(&user, &pass)?;
-        // SMTP initialization
-        Ok(())
-    }
 }
 
 #[derive(Debug)]
 pub enum Error {
     IO(io::Error),
     ImapError(ImapError),
-    // SmtpError(SmtpError)
+    // TODO: SmtpError(SmtpError)
 }
 
 impl From<ImapError> for Error {
