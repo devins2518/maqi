@@ -3,8 +3,6 @@ use crate::imap::error::Result as IResult;
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
 
-use log::debug;
-
 use super::error::ImapError;
 use super::scanner::Scanner;
 use super::tokens::Token;

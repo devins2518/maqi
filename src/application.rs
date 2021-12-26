@@ -1,7 +1,7 @@
 use crate::{
     client::{EmailClient, Error},
     terminal::Terminal,
-    ui::{Prompt, UI},
+    ui::UI,
     utils::{Event, Provider},
 };
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};

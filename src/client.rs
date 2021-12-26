@@ -1,5 +1,3 @@
-use log::debug;
-
 use crate::{
     imap::{error::ImapError, ImapClient},
     utils::Provider,
