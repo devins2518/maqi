@@ -48,7 +48,7 @@ impl Application {
                             self.error(&e.to_string());
                         }
                     }
-                    _ => break,
+                    _ => (),
                 }
             }
         }
@@ -75,14 +75,14 @@ impl Application {
         let user = self.prompt("Please enter username: ");
         let pass = self.prompt("Please enter password: ");
         self.email_client.new_mailbox(Provider::ICloud)?;
+        self.email_client.login(&user, &pass)?;
         info!("user {}", user);
         info!("pass {}", pass);
-        self.email_client.login(&user, &pass)?;
         Ok(())
     }
 
     fn prompt(&mut self, msg: &str) -> String {
-        let mut prompt = Prompt::new(msg, &self.terminal);
+        let mut prompt = self.ui.prompt(msg);
         loop {
             self.terminal
                 .draw(|f| {

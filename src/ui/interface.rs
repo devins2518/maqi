@@ -74,6 +74,10 @@ impl UI {
         }
     }
 
+    pub fn prompt(&self, msg: &str) -> Prompt {
+        Prompt::new(msg, self.prompt_buffer.area)
+    }
+
     // TODO: These don't expire
     pub fn info(&mut self, msg: &str) {
         self.report = Some(Report::new(ReportType::Info, msg));
