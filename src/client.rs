@@ -37,7 +37,7 @@ impl EmailClient {
     }
 
     pub fn login(&mut self, user: &str, pass: &str) -> Result<(), Error> {
-        self.imap[self.index].login(user, pass)?;
+        self.imap[self.index - 1].login(user, pass)?;
         Ok(())
     }
 

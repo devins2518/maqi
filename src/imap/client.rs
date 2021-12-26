@@ -54,7 +54,7 @@ impl ImapClient {
         command.check(&self.state)?;
         let msg = format!("{} {}", self.tag, command);
 
-        info!("{}", msg);
+        info!("Sent: {}", msg);
         self.stream.write(msg.as_bytes()).unwrap();
         self.tag.inc();
         Ok(())
@@ -67,5 +67,12 @@ impl ImapClient {
         let s = String::from_utf8(buf).unwrap();
         debug!("{}", s);
         ServerResponse::from(s)
+    }
+}
+
+impl Drop for ImapClient {
+    fn drop(&mut self) {
+        self.send(Command::Logout).unwrap();
+        drop(self);
     }
 }
