@@ -1,30 +1,28 @@
 use crate::{
     client::{EmailClient, Error},
-    imap::error::Result as IResult,
     terminal::Terminal,
-    ui::UI,
-    utils::Provider,
+    ui::{Prompt, UI},
+    utils::{Event, Provider},
 };
 use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
 use log::{error, info, warn};
 use std::io;
 
 pub struct Application {
-    terminal: Terminal,
     pub title: &'static str,
     email_client: EmailClient,
     ui: UI,
+    terminal: Terminal,
 }
 
-impl<'a> Application {
+impl Application {
     pub fn new(title: &'static str) -> Self {
         let terminal = Terminal::new();
-        let rect = terminal.size().unwrap();
         Self {
-            terminal,
             title,
             email_client: EmailClient::new(),
-            ui: UI::new(&rect),
+            ui: UI::new(&terminal),
+            terminal,
         }
     }
 
@@ -41,7 +39,7 @@ impl<'a> Application {
                     Key(KeyEvent {
                         code: KeyCode::Char('t'),
                         ..
-                    }) => self.ui.spans.push(String::from("hey")),
+                    }) => self.ui.titles.push(String::from("hey")),
                     Key(KeyEvent {
                         code: KeyCode::Char('l'),
                         ..
@@ -50,43 +48,53 @@ impl<'a> Application {
                             self.error(&e.to_string());
                         }
                     }
-                    _ => {}
+                    _ => break,
                 }
-            };
+            }
         }
         Ok(())
     }
 
-    fn info(&mut self, msg: &str) -> io::Result<()> {
+    fn info(&mut self, msg: &str) {
         info!("Info logged: {}", msg);
-        self.ui.info(&mut self.terminal, msg)?;
-        Ok(())
+        self.ui.info(msg);
     }
 
-    fn warning(&mut self, msg: &str) -> io::Result<()> {
+    fn warning(&mut self, msg: &str) {
         warn!("Warning logged: {}", msg);
-        self.ui.warning(&mut self.terminal, msg)?;
-        Ok(())
+        self.ui.warning(msg);
     }
 
-    fn error(&mut self, msg: &str) -> io::Result<()> {
+    fn error(&mut self, msg: &str) {
         error!("Error logged: {}", msg);
-        self.ui.error(&mut self.terminal, msg)?;
-        Ok(())
+        self.ui.error(msg);
     }
 
     // TODO: async this
     fn login(&mut self) -> Result<(), Error> {
-        let user = self
-            .ui
-            .prompt(&mut self.terminal, "Please enter username: ");
-        let pass = self
-            .ui
-            .prompt(&mut self.terminal, "Please enter password: ");
+        let user = self.prompt("Please enter username: ");
+        let pass = self.prompt("Please enter password: ");
         self.email_client.new_mailbox(Provider::ICloud)?;
-        self.email_client.login(&user, &pass)?;
         info!("user {}", user);
         info!("pass {}", pass);
+        self.email_client.login(&user, &pass)?;
         Ok(())
+    }
+
+    fn prompt(&mut self, msg: &str) -> String {
+        let mut prompt = Prompt::new(msg, &self.terminal);
+        loop {
+            self.terminal
+                .draw(|f| {
+                    self.ui.draw(f);
+                    prompt.draw(f);
+                })
+                .unwrap();
+
+            if let Event::Break = prompt.handle_event() {
+                break;
+            }
+        }
+        prompt.response
     }
 }

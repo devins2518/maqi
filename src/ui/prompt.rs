@@ -1,77 +1,84 @@
-use crossterm::event::{self, Event::Key, KeyCode, KeyEvent};
+use crate::{terminal::Terminal, ui::UI, utils::Event};
+use crossterm::event::{
+    self,
+    Event::{self as CEvent, Key},
+    KeyCode, KeyEvent,
+};
 use tui::{
-    backend::Backend,
     buffer::Buffer,
-    layout::Rect,
-    style::{Modifier, Style},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::Style,
     widgets::Widget,
 };
 
-use crate::{terminal::Terminal, ui::UI};
+use super::Frame;
 
-pub(super) struct Prompt<'msg, 'ui> {
+pub struct Prompt<'msg> {
     msg: &'msg str,
-    response: String,
-    ui: &'ui UI,
+    area: Rect,
+    pub response: String,
 }
 
-impl<'msg, 'ui> Prompt<'msg, 'ui> {
-    pub fn new(msg: &'msg str, ui: &'ui UI) -> Self {
-        Prompt {
+impl<'msg> Prompt<'msg> {
+    pub fn new(msg: &'msg str, term: &Terminal) -> Self {
+        let rect = term.size().unwrap();
+        let prompt_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(rect);
+        Self {
             msg,
+            area: prompt_chunks[1],
             response: String::new(),
-            ui,
         }
     }
 
-    pub fn run(mut self, term: &mut Terminal, area: Rect) -> String {
-        term.set_cursor(area.x, area.y).unwrap();
-        term.show_cursor().unwrap();
-        loop {
-            term.draw(|f| {
-                self.ui.draw(f);
-                f.render_widget(&self, area);
-            })
-            .unwrap();
+    pub fn draw(&self, f: &mut Frame) {
+        f.render_widget(self, self.area);
+    }
 
-            if let Ok(e) = event::read() {
-                match e {
-                    Key(KeyEvent {
-                        code: KeyCode::Esc, ..
-                    }) => {
-                        self.response = String::new();
-                        break;
-                    }
-                    Key(KeyEvent {
-                        code: KeyCode::Enter,
-                        ..
-                    }) => break,
-                    Key(KeyEvent {
-                        code: KeyCode::Char(c),
-                        ..
-                    }) => self.response.push(c),
-                    Key(KeyEvent {
-                        code: KeyCode::Backspace,
-                        ..
-                    }) => {
-                        self.response.pop();
-                    }
-                    _ => (),
-                };
+    pub fn handle_event(&mut self) -> Event {
+        if let Ok(e) = event::read() {
+            match e {
+                Key(KeyEvent {
+                    code: KeyCode::Esc, ..
+                }) => {
+                    self.response.clear();
+                    Event::Break
+                }
+                Key(KeyEvent {
+                    code: KeyCode::Enter,
+                    ..
+                }) => Event::Break,
+                Key(KeyEvent {
+                    code: KeyCode::Char(c),
+                    ..
+                }) => {
+                    self.response.push(c);
+                    Event::None
+                }
+                Key(KeyEvent {
+                    code: KeyCode::Backspace,
+                    ..
+                }) => {
+                    let _ = self.response.pop();
+                    Event::None
+                }
+                _ => Event::None,
             }
+        } else {
+            Event::None
         }
-        term.hide_cursor().unwrap();
-
-        self.response
     }
 }
 
-impl<'msg, 'ui> Widget for &Prompt<'msg, 'ui> {
+impl Widget for &Prompt<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_string(area.x, area.y, self.msg, Style::default());
         buf.set_string(
-            area.x,
+            area.x + self.msg.len() as u16,
             area.y,
-            format!("{}{}", self.msg, self.response),
+            &self.response,
             Style::default(),
         );
     }

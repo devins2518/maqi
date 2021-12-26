@@ -17,3 +17,8 @@ impl<'a> Provider<'a> {
         }
     }
 }
+
+pub enum Event {
+    Break,
+    None,
+}

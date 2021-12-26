@@ -1,48 +1,38 @@
-use std::io;
-
 use tui::{
+    buffer::Buffer,
     layout::Rect,
     style::{Color, Style},
     widgets::Widget,
 };
 
-use crate::terminal::Terminal;
-
-use super::UI;
-
+#[derive(Debug)]
 pub enum ReportType {
     Info,
     Warning,
     Error,
 }
 
-pub struct Report<'msg, 'ui> {
+pub struct Report {
     r_type: ReportType,
-    msg: &'msg str,
-    ui: &'ui UI,
+    msg: String,
 }
 
-impl<'msg, 'ui> Report<'msg, 'ui> {
-    pub fn new(r_type: ReportType, msg: &'msg str, ui: &'ui UI) -> Self {
-        Self { r_type, msg, ui }
-    }
-
-    pub fn show(self, term: &mut Terminal, area: Rect) -> io::Result<()> {
-        term.draw(|f| {
-            self.ui.draw(f);
-            f.render_widget(self, area);
-        })?;
-        Ok(())
+impl Report {
+    pub fn new(r_type: ReportType, msg: &str) -> Self {
+        Self {
+            r_type,
+            msg: String::from(msg),
+        }
     }
 }
 
-impl Widget for Report<'_, '_> {
-    fn render(self, area: Rect, buf: &mut tui::buffer::Buffer) {
+impl Widget for &Report {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let color = match self.r_type {
             ReportType::Info => Color::Blue,
             ReportType::Warning => Color::Yellow,
             ReportType::Error => Color::Red,
         };
-        buf.set_string(area.x, area.y, self.msg, Style::default().fg(color));
+        buf.set_string(area.x, area.y, &self.msg, Style::default().fg(color));
     }
 }

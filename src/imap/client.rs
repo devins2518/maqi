@@ -45,20 +45,17 @@ impl ImapClient {
     /// Only call while in State::NotAuthenticated
     pub fn login(&mut self, user: &str, pass: &str) -> IResult<()> {
         self.send(Command::Login(user, pass))?;
-        let mut response = self.receive();
-        while response.is_continuation() {
-            response = self.receive();
-        }
+        let response = self.receive();
         Ok(())
     }
 
     fn send(&mut self, command: Command) -> IResult<()> {
         // TODO: Remove once tested enough
         command.check(&self.state)?;
+        let msg = format!("{} {}", self.tag, command);
 
-        self.stream
-            .write(format!("{} {}\r\n", self.tag, command).as_bytes())
-            .unwrap();
+        info!("{}", msg);
+        self.stream.write(msg.as_bytes()).unwrap();
         self.tag.inc();
         Ok(())
     }
@@ -68,7 +65,7 @@ impl ImapClient {
         let mut buf = Vec::new();
         reader.read_until(b'\r', &mut buf).unwrap();
         let s = String::from_utf8(buf).unwrap();
-        info!("{}", s);
+        debug!("{}", s);
         ServerResponse::from(s)
     }
 }
