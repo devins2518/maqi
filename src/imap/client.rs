@@ -72,7 +72,8 @@ impl ImapClient {
 
 impl Drop for ImapClient {
     fn drop(&mut self) {
-        self.send(Command::Logout).unwrap();
+        // Can fail if connection is lost before dropping self
+        self.send(Command::Logout).unwrap_or(());
         drop(self);
     }
 }
