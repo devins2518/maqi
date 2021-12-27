@@ -228,6 +228,24 @@ impl ServerResponse {
     pub fn is_continuation(&self) -> bool {
         self.tag == Tag::ServerContinuation
     }
+
+    pub fn is_err(&self) -> Option<ImapError> {
+        match self.response {
+            ImapResponse::No => {
+                if let Some(ref msg) = &self.msg {
+                    if let Some(Token::AuthenticationFailed) = msg.get(1) {
+                        Some(ImapError::AuthenticationFailed)
+                    } else {
+                        Some(ImapError::Bad)
+                    }
+                } else {
+                    Some(ImapError::Bad)
+                }
+            }
+            ImapResponse::Preauth => Some(ImapError::Preauth),
+            _ => None,
+        }
+    }
 }
 
 impl<T> From<T> for ServerResponse

@@ -1,5 +1,5 @@
 use std::{
-    io::{self, BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Write},
     net::TcpStream,
     str,
 };
@@ -44,7 +44,11 @@ impl ImapClient {
     pub fn login(&mut self, user: &str, pass: &str) -> ImapResult<()> {
         self.send(Command::Login(user, pass))?;
         let response = self.receive()?;
-        Ok(())
+        if let Some(e) = response.is_err() {
+            Err(e)
+        } else {
+            Ok(())
+        }
     }
 
     fn send(&mut self, command: Command) -> ImapResult<()> {
@@ -55,7 +59,7 @@ impl ImapClient {
         info!("Sent: {}", msg);
         self.stream.write(msg.as_bytes()).unwrap();
         self.stream.write(b"\r\n").unwrap();
-        self.stream.flush();
+        self.stream.flush()?;
         self.tag.inc();
         Ok(())
     }
