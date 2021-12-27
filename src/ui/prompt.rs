@@ -6,7 +6,6 @@ use super::Frame;
 
 pub struct Prompt {
     len: u16,
-    area: Rect,
     pub response: String,
     buf: Buffer,
 }
@@ -18,14 +17,13 @@ impl Prompt {
         buf.set_string(buf.area.x, buf.area.y, msg, Style::default());
         Self {
             len: msg.len() as u16,
-            area,
             response: String::new(),
             buf,
         }
     }
 
     pub fn draw(&self, f: &mut Frame) {
-        f.render_widget(self, self.area);
+        f.render_widget(self, self.buf.area);
     }
 
     pub fn handle_event(&mut self) -> Event {

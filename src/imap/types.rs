@@ -10,8 +10,8 @@ use super::tokens::Token;
 #[derive(Debug, PartialEq, Eq)]
 enum Tag {
     Real(TagRepr),
-    ServerContinuation,
-    ClientContinuation,
+    ServerContinuation, // Server will send more
+    ClientContinuation, // Server requesting client sends more
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -175,47 +175,6 @@ impl<'a> Display for Command<'a> {
         f.write_str(&s)
     }
 }
-
-const RESPONSE_CODE_STR: [&str; 38] = [
-    "OK",
-    "NO",
-    "BAD",
-    "PREAUTH",
-    "BYE",
-    "ALERT",
-    "ALREADYEXISTS",
-    "APPENDUID",
-    "AUTHENTICATIONFAILED",
-    "AUTHORIZATIONFAILED",
-    "BADCHARSET",
-    "CANNOT",
-    "CAPABILITY",
-    "CLIENTBUG",
-    "CLOSED",
-    "CONTACTADMIN",
-    "COPYUID",
-    "CORRUPTION",
-    "EXPIRATION",
-    "EXPUNGEISSUED",
-    "HASCHILDREN",
-    "INUSE",
-    "LIMIT",
-    "NONEXISTENT",
-    "NOPERM",
-    "OVERQUOTA",
-    "PARSE",
-    "PERMANENTFLAGS",
-    "PRIVACYREQUIRED",
-    "READ-ONLY",
-    "READ-WRITE",
-    "SERVERBUG",
-    "TRYCREATE",
-    "UIDNEXT",
-    "UIDNOTSTICKY",
-    "UIDVAILIDITY",
-    "UNAVAILABLE",
-    "UNKNOWN-CTE",
-];
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ServerResponse {

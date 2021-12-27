@@ -39,7 +39,7 @@ impl Application {
                     Key(KeyEvent {
                         code: KeyCode::Char('t'),
                         ..
-                    }) => self.ui.titles.push(String::from("hey")),
+                    }) => self.ui.new_tab(String::from("hey")),
                     Key(KeyEvent {
                         code: KeyCode::Char('l'),
                         ..

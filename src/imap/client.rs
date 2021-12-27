@@ -70,7 +70,8 @@ impl ImapClient {
         reader.read_until(b'\r', &mut buf)?;
         let s = String::from_utf8(buf).unwrap();
         info!("Received: {}", s);
-        Ok(ServerResponse::from(s))
+        let reponse = ServerResponse::from(s);
+        Ok(reponse)
     }
 }
 
