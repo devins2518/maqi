@@ -1,4 +1,4 @@
-use crate::imap::error::Result as IResult;
+use crate::imap::error::ImapResult;
 
 use std::fmt::{self, Display};
 use std::str::{self, FromStr};
@@ -99,7 +99,7 @@ pub enum Command<'a> {
 }
 
 impl<'a> Command<'a> {
-    pub fn check(&self, state: &State) -> IResult<()> {
+    pub fn check(&self, state: &State) -> ImapResult<()> {
         match (self, state) {
             (Command::Capability | Command::Noop | Command::Logout, _) => Ok(()),
             (

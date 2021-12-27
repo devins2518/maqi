@@ -4,9 +4,9 @@ use std::{
     str,
 };
 
-use super::error::Result as IResult;
+use super::error::ImapResult;
 use super::types::{Command, ServerResponse, State, TagRepr};
-use log::{debug, info};
+use log::info;
 use openssl::ssl::{SslConnector, SslMethod, SslStream};
 
 /// TODO:
@@ -27,12 +27,10 @@ pub struct ImapClient {
 }
 
 impl ImapClient {
-    pub fn new(domain: &str, port: &str) -> Result<Self, io::Error> {
-        let connector = SslConnector::builder(SslMethod::tls_client())
-            .unwrap()
-            .build();
+    pub fn new(domain: &str, port: &str) -> ImapResult<Self> {
+        let connector = SslConnector::builder(SslMethod::tls_client())?.build();
         let stream = TcpStream::connect(format!("{}:{}", domain, port))?;
-        let stream = connector.connect(domain, stream).unwrap();
+        let stream = connector.connect(domain, stream)?;
         let mut client = Self {
             stream,
             tag: TagRepr::new(),
@@ -43,13 +41,13 @@ impl ImapClient {
     }
 
     /// Only call while in State::NotAuthenticated
-    pub fn login(&mut self, user: &str, pass: &str) -> IResult<()> {
+    pub fn login(&mut self, user: &str, pass: &str) -> ImapResult<()> {
         self.send(Command::Login(user, pass))?;
         let response = self.receive();
         Ok(())
     }
 
-    fn send(&mut self, command: Command) -> IResult<()> {
+    fn send(&mut self, command: Command) -> ImapResult<()> {
         // TODO: Remove once tested enough
         command.check(&self.state)?;
         let msg = format!("{} {}", self.tag, command);
