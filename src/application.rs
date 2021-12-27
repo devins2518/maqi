@@ -76,8 +76,6 @@ impl Application {
         let pass = self.prompt("Please enter password: ");
         self.email_client.new_mailbox(Provider::ICloud)?;
         self.email_client.login(&user, &pass)?;
-        info!("user {}", user);
-        info!("pass {}", pass);
         Ok(())
     }
 
