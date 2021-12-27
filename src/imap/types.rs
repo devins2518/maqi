@@ -247,7 +247,7 @@ where
             _ => unreachable!(),
         };
         let _ = iter.next(); // Skip space after response
-        response = if tag == Tag::ServerContinuation {
+        response = if tag == Tag::ClientContinuation {
             ImapResponse::Continuation
         } else {
             match iter.next().unwrap() {
