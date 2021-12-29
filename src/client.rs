@@ -30,6 +30,12 @@ impl EmailClient {
         Ok(())
     }
 
+    pub fn pop(&mut self) {
+        self.imap.pop();
+        // TODO: SMTP
+        self.dec();
+    }
+
     pub fn authenticate(&mut self) {
         unimplemented!()
     }

@@ -181,28 +181,29 @@ pub struct ServerResponse {
     tag: Tag,
     response: ImapResponse,
     msg: Option<Vec<Token>>,
+    continuations: Option<Vec<ServerResponse>>,
 }
 
 impl ServerResponse {
     pub fn is_continuation(&self) -> bool {
-        self.tag == Tag::ServerContinuation
+        self.tag == Tag::ServerContinuation && self.response != ImapResponse::Ok
     }
 
-    pub fn is_err(&self) -> Option<ImapError> {
+    pub fn is_err(&self) -> ImapResult<()> {
         match self.response {
             ImapResponse::No => {
                 if let Some(ref msg) = &self.msg {
                     if let Some(Token::AuthenticationFailed) = msg.get(1) {
-                        Some(ImapError::AuthenticationFailed)
+                        Err(ImapError::AuthenticationFailed)
                     } else {
-                        Some(ImapError::Bad)
+                        Err(ImapError::Bad)
                     }
                 } else {
-                    Some(ImapError::Bad)
+                    Err(ImapError::Bad)
                 }
             }
-            ImapResponse::Preauth => Some(ImapError::Preauth),
-            _ => None,
+            ImapResponse::Preauth => Err(ImapError::Preauth),
+            _ => Ok(()),
         }
     }
 }
@@ -251,7 +252,12 @@ where
             None
         };
 
-        Self { tag, response, msg }
+        Self {
+            tag,
+            response,
+            msg,
+            continuations: None,
+        }
     }
 }
 
@@ -381,21 +387,25 @@ mod test {
                     Token::EQUAL,
                     Token::Other(String::from("PLAIN")),
                 ]),
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::Real(TagRepr::from("A001")),
                 response: ImapResponse::Ok,
                 msg: Some(vec![Token::Other(String::from("Completed"))]),
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::ServerContinuation,
                 response: ImapResponse::Bye,
                 msg: None,
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::Real(TagRepr::from("A002")),
                 response: ImapResponse::Ok,
                 msg: None,
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::Real(TagRepr::from("A003")),
@@ -409,6 +419,7 @@ mod test {
                     Token::SP,
                     Token::Other(String::from("Failed")),
                 ]),
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::Real(TagRepr::from("A003")),
@@ -422,11 +433,13 @@ mod test {
                     Token::SP,
                     Token::Other(String::from("in")),
                 ]),
+                continuations: None,
             },
             ServerResponse {
                 tag: Tag::ServerContinuation,
                 response: ImapResponse::Size(23),
                 msg: Some(vec![Token::Exists]),
+                continuations: None,
             },
         ];
 

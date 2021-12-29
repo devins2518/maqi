@@ -44,11 +44,9 @@ impl ImapClient {
     pub fn login(&mut self, user: &str, pass: &str) -> ImapResult<()> {
         self.send(Command::Login(user, pass))?;
         let response = self.receive()?;
-        if let Some(e) = response.is_err() {
-            Err(e)
-        } else {
-            Ok(())
-        }
+        response.is_err()?;
+        self.state = State::Authenticated;
+        Ok(())
     }
 
     fn send(&mut self, command: Command) -> ImapResult<()> {
@@ -68,7 +66,7 @@ impl ImapClient {
         let mut reader = BufReader::new(&mut self.stream);
         let mut buf = Vec::new();
         reader.read_until(b'\r', &mut buf)?;
-        let s = String::from_utf8(buf).unwrap();
+        let s = str::from_utf8(&buf).unwrap();
         info!("Received: {}", s);
         let reponse = ServerResponse::from(s);
         Ok(reponse)
