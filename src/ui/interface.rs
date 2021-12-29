@@ -1,5 +1,5 @@
 use super::{
-    mailbox::Mailbox,
+    mailbox::MailboxUI,
     report::{Report, ReportType},
     tabline::Tabline,
 };
@@ -14,7 +14,7 @@ use tui::{
 pub type Frame<'a> = TuiFrame<'a, CrosstermBackend<Stdout>>;
 
 pub struct UI {
-    mailbox: Mailbox,
+    mailbox: MailboxUI,
     tabline: Tabline,
     prompt_area: Rect,
     report: Option<Report>,
@@ -36,7 +36,7 @@ impl UI {
             .constraints([Constraint::Length(3), Constraint::Min(1)])
             .split(h_chunks[1]);
         Self {
-            mailbox: Mailbox::new(h_chunks[0]),
+            mailbox: MailboxUI::new(h_chunks[0]),
             tabline: Tabline::new(v_chunks[0]),
             prompt_area: prompt_chunks[1],
             report: None,
@@ -67,6 +67,10 @@ impl UI {
 
     pub fn new_tab(&mut self, s: String) {
         self.tabline.push_title(s)
+    }
+
+    pub fn set_mailbox_names(&mut self, mailboxes: Vec<String>) {
+        self.mailbox.set_names(mailboxes);
     }
 
     // TODO: These don't expire

@@ -46,7 +46,7 @@ impl Tabline {
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded),
             )
-            .render(self.buf.area, &mut self.buf);
+            .render(self.area(), &mut self.buf);
     }
 }
 

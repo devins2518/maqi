@@ -5,3 +5,4 @@ mod tokens;
 mod types;
 
 pub use client::ImapClient;
+pub use types::ListPayload;

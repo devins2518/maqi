@@ -1,13 +1,12 @@
+use super::types::{Command, ServerResponse, State, TagRepr};
+use super::{error::ImapResult, types::ListPayload};
+use log::info;
+use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use std::{
     io::{BufRead, BufReader, Write},
     net::TcpStream,
     str,
 };
-
-use super::error::ImapResult;
-use super::types::{Command, ServerResponse, State, TagRepr};
-use log::info;
-use openssl::ssl::{SslConnector, SslMethod, SslStream};
 
 /// TODO:
 /// From RFC 9051:
@@ -47,6 +46,14 @@ impl ImapClient {
         response.is_err()?;
         self.state = State::Authenticated;
         Ok(())
+    }
+
+    // TODO: Properly parse list reponse
+    pub fn list(&mut self, payload: ListPayload) -> ImapResult<Vec<String>> {
+        self.send(Command::List(payload))?;
+        let response = self.receive()?;
+        response.is_err()?;
+        Ok(Vec::new())
     }
 
     fn send(&mut self, command: Command) -> ImapResult<()> {

@@ -81,7 +81,7 @@ pub enum Command<'a> {
     Rename,
     Subscribe,
     Unsubscribe,
-    List,
+    List(ListPayload<'a>),
     Namespace,
     Status,
     Append,
@@ -115,7 +115,7 @@ impl<'a> Command<'a> {
                 | Command::Rename
                 | Command::Subscribe
                 | Command::Unsubscribe
-                | Command::List
+                | Command::List(_)
                 | Command::Namespace
                 | Command::Status
                 | Command::Append
@@ -157,7 +157,7 @@ impl<'a> Display for Command<'a> {
             Command::Rename => "RENAME".to_string(),
             Command::Subscribe => "SUBSCRIBE".to_string(),
             Command::Unsubscribe => "UNSUBSCRIBE".to_string(),
-            Command::List => "LIST".to_string(),
+            Command::List(payload) => format!("LIST {}", payload),
             Command::Namespace => "NAMESPACE".to_string(),
             Command::Status => "STATUS".to_string(),
             Command::Append => "APPEND".to_string(),
@@ -328,6 +328,49 @@ pub enum State {
     Authenticated,
     Selected,
     Logout,
+}
+
+pub struct ListPayload<'req> {
+    pub selection_options: Option<ListSelectionOptions>,
+    pub reference: &'req str,
+    pub mailbox: &'req str,
+    pub return_options: Option<ListReturnOptions>,
+}
+
+impl<'req> ListPayload<'req> {
+    pub fn simple(reference: &'req str, mailbox: &'req str) -> Self {
+        Self {
+            selection_options: None,
+            reference,
+            mailbox,
+            return_options: None,
+        }
+    }
+}
+
+impl<'req> Display for ListPayload<'req> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("\"")?;
+        f.write_str(self.reference)?;
+        f.write_str("\"")?;
+        f.write_str(" ")?;
+        f.write_str("\"")?;
+        f.write_str(self.mailbox)?;
+        f.write_str("\"")?;
+        Ok(())
+    }
+}
+
+pub enum ListSelectionOptions {
+    Subscribed,
+    Remote,
+    RecursiveMatch,
+}
+
+pub enum ListReturnOptions {
+    Subscribed,
+    Children,
+    Status,
 }
 
 #[cfg(test)]
