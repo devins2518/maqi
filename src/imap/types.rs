@@ -176,6 +176,7 @@ impl<'a> Display for Command<'a> {
     }
 }
 
+#[deprecated]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ServerResponse {
     tag: Tag,
