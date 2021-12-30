@@ -26,7 +26,6 @@ pub enum Token {
     UNDERSCORE,   // _
     CRLF,         // \r\n
     DQUOTE,       // "
-    SP,
 
     // Word tokens
     Alert,                // ALERT
