@@ -1,5 +1,5 @@
 use crate::{
-    imap::{error::ImapError, ImapClient, ListPayload},
+    imap::{command::List, error::ImapError, ImapClient},
     utils::Provider,
 };
 use std::{error, fmt::Display, io};
@@ -36,17 +36,13 @@ impl EmailClient {
         self.dec();
     }
 
-    pub fn authenticate(&mut self) {
-        unimplemented!()
-    }
-
     pub fn login(&mut self, user: &str, pass: &str) -> Result<(), Error> {
         self.imap[self.index - 1].login(user, pass)?;
         Ok(())
     }
 
     pub fn mailboxes(&mut self) -> Result<Vec<String>, Error> {
-        Ok(self.imap[self.index - 1].list(ListPayload::simple("", "*"))?)
+        Ok(self.imap[self.index - 1].list(List::simple("", "*"))?)
     }
 
     fn inc(&mut self) {

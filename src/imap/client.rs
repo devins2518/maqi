@@ -1,5 +1,11 @@
-use super::types::{Command, ServerResponse, State, TagRepr};
-use super::{error::ImapResult, types::ListPayload};
+use super::{
+    command::{Command, List, Login, Logout},
+    dummy::Dummy,
+    error::ImapResult,
+    response::Response,
+    types::TagRepr,
+};
+use crate::imap::{response::LoginResponse, scanner::Scanner};
 use log::info;
 use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use std::{
@@ -35,55 +41,60 @@ impl ImapClient {
             tag: TagRepr::new(),
             state: State::NotAuthenticated,
         };
-        let _ = client.receive(); // Sends an Ok message at the beginning of communication
+        let _ = client.receive::<Dummy>(); // Sends an Ok message at the beginning of communication
         Ok(client)
     }
 
     /// Only call while in State::NotAuthenticated
     pub fn login(&mut self, user: &str, pass: &str) -> ImapResult<()> {
-        self.send(Command::Login(user, pass))?;
-        let response = self.receive()?;
+        self.send(Login::new(user, pass))?;
+        let response = self.receive::<LoginResponse>()?;
         response.is_err()?;
         self.state = State::Authenticated;
         Ok(())
     }
 
     // TODO: Properly parse list reponse
-    pub fn list(&mut self, payload: ListPayload) -> ImapResult<Vec<String>> {
-        self.send(Command::List(payload))?;
-        let response = self.receive()?;
-        response.is_err()?;
-        Ok(Vec::new())
+    pub fn list(&mut self, list: List) -> ImapResult<Vec<String>> {
+        unimplemented!()
     }
 
-    fn send(&mut self, command: Command) -> ImapResult<()> {
+    fn send<T: Command>(&mut self, command: T) -> ImapResult<()> {
         // TODO: Remove once tested enough
         command.check(&self.state)?;
-        let msg = format!("{} {}", self.tag, command);
+        let msg = format!("{} {}", self.tag, command.send());
 
         info!("Sent: {}", msg);
-        self.stream.write(msg.as_bytes()).unwrap();
-        self.stream.write(b"\r\n").unwrap();
+        self.stream.write(msg.as_bytes())?;
+        self.stream.write(b"\r\n")?;
         self.stream.flush()?;
         self.tag.inc();
         Ok(())
     }
 
-    pub fn receive(&mut self) -> ImapResult<ServerResponse> {
+    pub fn receive<T: Response>(&mut self) -> ImapResult<T> {
         let mut reader = BufReader::new(&mut self.stream);
         let mut buf = Vec::new();
         reader.read_until(b'\r', &mut buf)?;
         let s = str::from_utf8(&buf).unwrap();
         info!("Received: {}", s);
-        let reponse = ServerResponse::from(s);
-        Ok(reponse)
+        let mut scanner = Scanner::new(s);
+        scanner.scan_tokens();
+        Ok(T::receive(&scanner.tokens))
     }
 }
 
 impl Drop for ImapClient {
     fn drop(&mut self) {
         // Can fail if connection is lost before dropping self
-        self.send(Command::Logout).unwrap_or(());
+        self.send(Logout).unwrap_or(());
         drop(self);
     }
+}
+
+pub enum State {
+    NotAuthenticated,
+    Authenticated,
+    Selected,
+    Logout,
 }

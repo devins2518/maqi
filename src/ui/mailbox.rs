@@ -1,8 +1,6 @@
-use log::info;
 use tui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
-    text::{Span, Spans, Text},
     widgets::{Block, BorderType, Borders, List, ListItem, Widget},
 };
 

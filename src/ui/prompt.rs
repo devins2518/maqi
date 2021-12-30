@@ -74,7 +74,7 @@ impl Prompt {
 }
 
 impl Widget for &Prompt {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
         buf.merge(&self.buf);
     }
 }

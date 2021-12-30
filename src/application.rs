@@ -79,7 +79,8 @@ impl Application {
             self.email_client.pop();
             return Err(e);
         }
-        self.ui.set_mailbox_names(self.email_client.mailboxes()?);
+        // TODO: LIST is very unfinished
+        // self.ui.set_mailbox_names(self.email_client.mailboxes()?);
         Ok(())
     }
 
