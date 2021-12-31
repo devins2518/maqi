@@ -61,7 +61,8 @@ impl UI {
         }
     }
 
-    pub fn prompt(&self, msg: &str) -> Prompt {
+    pub fn prompt(&mut self, msg: &str) -> Prompt {
+        self.report = None;
         Prompt::new(msg, self.prompt_area)
     }
 
