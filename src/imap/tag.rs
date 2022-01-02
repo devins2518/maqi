@@ -1,9 +1,8 @@
+use super::tokens::Token;
 use std::{
     fmt::{self, Display},
     str::{self, FromStr},
 };
-
-use super::tokens::Token;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Tag {
@@ -38,7 +37,6 @@ impl TagRepr {
     }
     pub fn inc(&mut self) {
         if self.numeric == 9999 {
-            // TODO: increase letter
             self.alpha = if self.alpha == 'Z' {
                 'A'
             } else {

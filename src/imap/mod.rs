@@ -4,7 +4,7 @@ mod dummy;
 pub mod error;
 pub mod response;
 mod scanner;
+mod tag;
 mod tokens;
-mod types;
 
 pub use client::ImapClient;

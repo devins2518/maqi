@@ -1,8 +1,8 @@
 use super::{result::ImapResponse, Response};
 use crate::imap::{
     error::{ImapError, ImapResult},
+    tag::Tag,
     tokens::Token,
-    types::Tag,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -31,7 +31,7 @@ impl Response for LoginResponse {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::imap::{scanner::Scanner, types::TagRepr};
+    use crate::imap::{scanner::Scanner, tag::TagRepr};
 
     #[test]
     fn test_login() {

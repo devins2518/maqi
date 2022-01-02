@@ -3,7 +3,7 @@ use super::{
     dummy::Dummy,
     error::ImapResult,
     response::Response,
-    types::TagRepr,
+    tag::TagRepr,
 };
 use crate::imap::{response::LoginResponse, scanner::Scanner};
 use log::info;
