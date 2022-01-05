@@ -1,4 +1,4 @@
-use super::{result::ImapResponse, Response};
+use super::{response::ImapResponse, Response};
 use crate::imap::{
     error::{ImapError, ImapResult},
     tag::Tag,
@@ -13,7 +13,7 @@ pub struct LoginResponse {
 
 // TODO: record AUTHENTICATIONFAILED as a separate error
 impl Response for LoginResponse {
-    fn receive<'a>(tokens: &[Token]) -> Self {
+    fn convert<'a>(tokens: &[Token]) -> Self {
         let tag = Tag::from(&tokens[0]);
         let response = ImapResponse::from(&tokens[1]);
         Self { tag, response }
@@ -58,7 +58,7 @@ mod test {
         for (test, parsed) in test.into_iter().zip(parsed.into_iter()) {
             let mut s = Scanner::new(test);
             s.scan_tokens();
-            assert_eq!(LoginResponse::receive(&s.tokens), parsed)
+            assert_eq!(LoginResponse::convert(&s.tokens), parsed)
         }
     }
 }

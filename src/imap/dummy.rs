@@ -15,7 +15,7 @@ impl Command for Dummy {
 }
 
 impl Response for Dummy {
-    fn receive<'a>(_tokens: &[Token]) -> Self {
+    fn convert<'a>(_tokens: &[Token]) -> Self {
         Dummy
     }
     fn is_err(&self) -> ImapResult<()> {

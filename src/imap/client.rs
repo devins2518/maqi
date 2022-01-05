@@ -80,7 +80,7 @@ impl ImapClient {
         info!("Received: {}", s);
         let mut scanner = Scanner::new(s);
         scanner.scan_tokens();
-        Ok(T::receive(&scanner.tokens))
+        Ok(T::convert(&scanner.tokens))
     }
 }
 
