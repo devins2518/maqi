@@ -1,35 +1,43 @@
-use super::{flags::Flags, response::ImapResponse, Response};
-use crate::imap::{error::ImapResult, tag::Tag, tokens::Token};
+use super::{
+    flags::Flags,
+    response::ImapResponse,
+    scanner::{Scan, Scanner},
+    Response,
+};
+use crate::imap::{error::ImapResult, tag::Tag};
 
-pub struct ListReponse<'a> {
+pub struct ListReponse {
     tag: Tag,
-    inner: Vec<ListInner<'a>>,
+    inner: Vec<ListInner>,
     response: ImapResponse,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ListInner<'a> {
+pub struct ListInner {
     flags: Vec<Flags>,
-    hierarchy_delim: &'a str,
-    name: &'a str,
+    hierarchy_delim: String,
+    name: String,
 }
 
-impl<'a> Response for ListInner<'a> {
-    fn convert(tokens: &[Token]) -> Self {
-        let mut iter = tokens.into_iter();
-        assert!(*iter.next().unwrap() == Token::STAR);
-        assert!(*iter.next().unwrap() == Token::List);
-        assert!(*iter.next().unwrap() == Token::LPAREN);
-        let flags = Flags::from_tokens(&mut iter);
-        let hierarchy_delim = unimplemented!();
-        let name = unimplemented!();
+impl Scan for ListInner {
+    fn scan(s: &str, scanner: Scanner) -> Self {
+        let (rest, _) = scanner.scan_tag(s).unwrap();
+        let (rest, _) = scanner.scan_word(rest, "LIST").unwrap();
+        println!("'{}'", rest);
+        let (rest, flags) = scanner.scan_flags(rest).unwrap();
+        let (rest, _) = scanner.scan_space(rest).unwrap();
+        let (rest, hierarchy_delim) = scanner.scan_quotes(rest).unwrap();
+        let (name, _) = scanner.scan_space(rest).unwrap();
 
         Self {
             flags,
-            hierarchy_delim,
-            name,
+            hierarchy_delim: hierarchy_delim.to_string(),
+            name: name.to_string(),
         }
     }
+}
+
+impl Response for ListInner {
     fn is_err(&self) -> ImapResult<()> {
         // ListInners should always have an untagged response
         Ok(())
@@ -39,37 +47,34 @@ impl<'a> Response for ListInner<'a> {
 #[cfg(test)]
 mod test {
     use super::{super::flags::Flags, super::Response, ListInner};
-    use crate::imap::scanner::Scanner;
 
     #[test]
     fn test_list_inner() {
         let test = [
-            "* LIST (\\Noselect) \"/\" ~/Mail/foo",
+            "* LIST (\\Noselect \\NonExistent) \"/\" ~/Mail/foo",
             "* LIST () \"/\" INBOX",
             "* LIST () \"/\" Drafts",
         ];
         let parsed = [
             ListInner {
-                flags: vec![Flags::NoSelect],
-                hierarchy_delim: "/",
-                name: "~/Mail/foo",
+                flags: vec![Flags::NoSelect, Flags::NonExistent],
+                hierarchy_delim: String::from("/"),
+                name: String::from("~/Mail/foo"),
             },
             ListInner {
                 flags: vec![],
-                hierarchy_delim: "/",
-                name: "INBOX",
+                hierarchy_delim: String::from("/"),
+                name: String::from("INBOX"),
             },
             ListInner {
                 flags: vec![],
-                hierarchy_delim: "/",
-                name: "Drafts",
+                hierarchy_delim: String::from("/"),
+                name: String::from("Drafts"),
             },
         ];
 
         for (test, parsed) in test.into_iter().zip(parsed.into_iter()) {
-            let mut s = Scanner::new(test);
-            s.scan_tokens();
-            assert_eq!(ListInner::convert(&s.tokens), parsed)
+            assert_eq!(ListInner::convert(test), parsed)
         }
     }
 }

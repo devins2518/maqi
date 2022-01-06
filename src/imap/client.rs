@@ -5,7 +5,7 @@ use super::{
     response::Response,
     tag::TagRepr,
 };
-use crate::imap::{response::LoginResponse, scanner::Scanner};
+use crate::imap::response::LoginResponse;
 use log::info;
 use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use std::{
@@ -78,9 +78,7 @@ impl ImapClient {
         reader.read_until(b'\r', &mut buf)?;
         let s = str::from_utf8(&buf).unwrap();
         info!("Received: {}", s);
-        let mut scanner = Scanner::new(s);
-        scanner.scan_tokens();
-        Ok(T::convert(&scanner.tokens))
+        Ok(T::convert(s))
     }
 }
 

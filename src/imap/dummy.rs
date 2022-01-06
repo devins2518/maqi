@@ -1,5 +1,8 @@
 use super::{
-    client::State, command::Command, error::ImapResult, response::Response, tokens::Token,
+    client::State,
+    command::Command,
+    error::ImapResult,
+    response::{Response, Scan, Scanner},
 };
 use std::borrow::Cow;
 
@@ -14,10 +17,13 @@ impl Command for Dummy {
     }
 }
 
-impl Response for Dummy {
-    fn convert<'a>(_tokens: &[Token]) -> Self {
-        Dummy
+impl Scan for Dummy {
+    fn scan(s: &str, scanner: Scanner) -> Self {
+        Self
     }
+}
+
+impl Response for Dummy {
     fn is_err(&self) -> ImapResult<()> {
         Ok(())
     }

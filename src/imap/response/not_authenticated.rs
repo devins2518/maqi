@@ -1,8 +1,11 @@
-use super::{response::ImapResponse, Response};
+use super::{
+    response::ImapResponse,
+    scanner::{Scan, Scanner},
+    Response,
+};
 use crate::imap::{
     error::{ImapError, ImapResult},
     tag::Tag,
-    tokens::Token,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -11,13 +14,17 @@ pub struct LoginResponse {
     response: ImapResponse,
 }
 
-// TODO: record AUTHENTICATIONFAILED as a separate error
-impl Response for LoginResponse {
-    fn convert<'a>(tokens: &[Token]) -> Self {
-        let tag = Tag::from(&tokens[0]);
-        let response = ImapResponse::from(&tokens[1]);
+impl Scan for LoginResponse {
+    fn scan(s: &str, scanner: Scanner) -> Self {
+        let (rest, tag) = scanner.scan_tag(s).unwrap();
+        let (rest, response) = scanner.scan_response(rest).unwrap();
+
         Self { tag, response }
     }
+}
+
+// TODO: record AUTHENTICATIONFAILED as a separate error
+impl Response for LoginResponse {
     fn is_err(&self) -> ImapResult<()> {
         match self.response {
             ImapResponse::No => Err(ImapError::Bad),
@@ -31,7 +38,7 @@ impl Response for LoginResponse {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::imap::{scanner::Scanner, tag::TagRepr};
+    use crate::imap::tag::TagRepr;
 
     #[test]
     fn test_login() {
@@ -56,9 +63,7 @@ mod test {
         ];
 
         for (test, parsed) in test.into_iter().zip(parsed.into_iter()) {
-            let mut s = Scanner::new(test);
-            s.scan_tokens();
-            assert_eq!(LoginResponse::convert(&s.tokens), parsed)
+            assert_eq!(LoginResponse::convert(test), parsed)
         }
     }
 }

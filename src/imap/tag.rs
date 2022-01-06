@@ -1,4 +1,3 @@
-use super::tokens::Token;
 use std::{
     fmt::{self, Display},
     str::{self, FromStr},
@@ -11,13 +10,12 @@ pub enum Tag {
     ClientContinuation, // Server requesting client sends more
 }
 
-impl From<&Token> for Tag {
-    fn from(t: &Token) -> Self {
-        match t {
-            Token::Other(s) => Tag::Real(TagRepr::from(s)),
-            Token::STAR => Tag::Untagged,
-            Token::PLUS => Tag::ClientContinuation,
-            _ => unreachable!(),
+impl From<&str> for Tag {
+    fn from(s: &str) -> Self {
+        match s {
+            "*" => Tag::Untagged,
+            "+" => Tag::ClientContinuation,
+            _ => Tag::Real(TagRepr::from(s)),
         }
     }
 }

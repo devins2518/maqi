@@ -1,4 +1,4 @@
-use crate::imap::tokens::Token;
+use crate::imap::{tag::Tag, tokens::Token};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ImapResponse {
@@ -22,22 +22,22 @@ pub enum ImapResponse {
     Size(usize),
 }
 
-impl From<&Token> for ImapResponse {
-    fn from(t: &Token) -> Self {
-        match t {
-            Token::Ok => ImapResponse::Ok,
-            Token::No => ImapResponse::No,
-            Token::Bad => ImapResponse::Bad,
-            Token::PreAuth => ImapResponse::Preauth,
-            Token::Bye => ImapResponse::Bye,
-            Token::Enabled => ImapResponse::Enabled,
-            Token::Capability => ImapResponse::Capability,
-            Token::List => ImapResponse::List,
-            Token::Namespace => ImapResponse::Namespace,
-            Token::Status => ImapResponse::Status,
-            Token::ESearch => ImapResponse::Esearch,
-            Token::Flags => ImapResponse::Flags,
-            Token::Other(n) => ImapResponse::Size(n.parse().unwrap()),
+impl From<&str> for ImapResponse {
+    fn from(s: &str) -> Self {
+        match s {
+            "OK" => ImapResponse::Ok,
+            "NO" => ImapResponse::No,
+            "BAD" => ImapResponse::Bad,
+            "PREAUTH" => ImapResponse::Preauth,
+            "BYE" => ImapResponse::Bye,
+            "ENABLED" => ImapResponse::Enabled,
+            "CAPABILITY" => ImapResponse::Capability,
+            "LIST" => ImapResponse::List,
+            "NAMESPACE" => ImapResponse::Namespace,
+            "STATUS" => ImapResponse::Status,
+            "ESEARCH" => ImapResponse::Esearch,
+            "FLAGS" => ImapResponse::Flags,
+            n if n.parse::<u32>().is_ok() => ImapResponse::Size(n.parse().unwrap()),
             _ => ImapResponse::Continuation,
         }
     }

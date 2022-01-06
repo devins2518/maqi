@@ -1,7 +1,3 @@
-use std::slice::Iter;
-
-use crate::imap::tokens::Token;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Flags {
     NonExistent,
@@ -13,30 +9,35 @@ pub enum Flags {
     Unmarked,
     Subscribed,
     Remote,
+    All,
+    Archive,
+    Drafts,
+    Flagged,
+    Junk,
+    Sent,
+    Trash,
 }
 
-impl Flags {
-    pub fn from_tokens(tokens: &mut Iter<Token>) -> Vec<Self> {
-        tokens
-            .filter(|token| **token != Token::BWSLASH)
-            .map_while(|token| {
-                if *token == Token::RPAREN {
-                    None
-                } else {
-                    match *token {
-                        Token::BWSlashNonExistent => Some(Self::NonExistent),
-                        Token::BWSlashNoInferiors => Some(Self::NoInferiors),
-                        Token::BWSlashNoSelect => Some(Self::NoSelect),
-                        Token::BWSlashHasChildren => Some(Self::HasChildren),
-                        Token::BWSlashHasNoChildren => Some(Self::HasNoChildren),
-                        Token::BWSlashMarked => Some(Self::Marked),
-                        Token::BWSlashUnmarked => Some(Self::Unmarked),
-                        Token::BWSlashSubscribed => Some(Self::Subscribed),
-                        Token::BWSlashRemote => Some(Self::Remote),
-                        _ => unreachable!(),
-                    }
-                }
-            })
-            .collect()
+impl From<&str> for Flags {
+    fn from(s: &str) -> Self {
+        match s {
+            "NonExistent" => Self::NonExistent,
+            "Noinferiors" => Self::NoInferiors,
+            "Noselect" => Self::NoSelect,
+            "HasChildren" => Self::HasChildren,
+            "HasNoChildren" => Self::HasNoChildren,
+            "Marked" => Self::Marked,
+            "Unmarked" => Self::Unmarked,
+            "Subscribed" => Self::Subscribed,
+            "Remote" => Self::Remote,
+            "All" => Self::All,
+            "Archive" => Self::Archive,
+            "Drafts" => Self::Drafts,
+            "Flagged" => Self::Flagged,
+            "Junk" => Self::Junk,
+            "Sent" => Self::Sent,
+            "Trash" => Self::Trash,
+            _ => unreachable!(),
+        }
     }
 }
