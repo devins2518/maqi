@@ -1,3 +1,5 @@
+use crate::imap::error::ImapError;
+
 use super::{super::tag::Tag, flags::Flags, response::ImapResponse};
 use nom::{
     branch::alt,
@@ -12,6 +14,10 @@ use nom::{
 pub struct Scanner;
 
 impl<'a> Scanner {
+    pub fn scan_untagged(&self, s: &'a str) -> IResult<&'a str, Tag> {
+        terminated(tag("*"), tag(" "))(s).map(|x| (x.0, Tag::from(x.1)))
+    }
+
     pub fn scan_tag(&self, s: &'a str) -> IResult<&'a str, Tag> {
         terminated(alt((tag("*"), alt((tag("+"), alphanumeric1)))), tag(" "))(s)
             .map(|x| (x.0, Tag::from(x.1)))
@@ -60,8 +66,11 @@ impl<'a> Scanner {
     }
 }
 
-pub trait Scan {
-    fn scan(s: &str, scanner: Scanner) -> Self;
+pub trait Scan
+where
+    Self: Sized,
+{
+    fn scan(s: &str, scanner: Scanner) -> Result<Self, ImapError>;
 }
 
 #[cfg(test)]

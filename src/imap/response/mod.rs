@@ -12,9 +12,12 @@ where
     fn convert(s: &str) -> Self {
         let scanner = Scanner;
 
-        Self::scan(s, scanner)
+        Self::scan(s, scanner).unwrap()
     }
     fn is_err(&self) -> ImapResult<()>;
+    fn should_continue(_v: &[u8]) -> bool {
+        false
+    }
 }
 
 mod authenticated;

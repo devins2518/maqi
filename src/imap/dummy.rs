@@ -1,7 +1,7 @@
 use super::{
     client::State,
     command::Command,
-    error::ImapResult,
+    error::{ImapError, ImapResult},
     response::{Response, Scan, Scanner},
 };
 use std::borrow::Cow;
@@ -18,8 +18,8 @@ impl Command for Dummy {
 }
 
 impl Scan for Dummy {
-    fn scan(s: &str, scanner: Scanner) -> Self {
-        Self
+    fn scan(s: &str, scanner: Scanner) -> Result<Self, ImapError> {
+        Ok(Self)
     }
 }
 

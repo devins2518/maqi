@@ -29,7 +29,7 @@ impl<'a> Command for List<'a> {
     }
     fn check(&self, state: &State) -> ImapResult<()> {
         match state {
-            State::Authenticated => Ok(()),
+            State::Authenticated | State::Selected => Ok(()),
             _ => Err(ImapError::InvalidState),
         }
     }

@@ -2,10 +2,9 @@ use super::{
     command::{Command, List, Login, Logout},
     dummy::Dummy,
     error::ImapResult,
-    response::Response,
+    response::{ListResponse, LoginResponse, Response},
     tag::TagRepr,
 };
-use crate::imap::response::LoginResponse;
 use log::info;
 use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use std::{
@@ -55,8 +54,11 @@ impl ImapClient {
     }
 
     // TODO: Properly parse list reponse
-    pub fn list(&mut self, list: List) -> ImapResult<Vec<String>> {
-        unimplemented!()
+    pub fn list(&mut self, reference: &str, mailbox: &str) -> ImapResult<Vec<String>> {
+        self.send(List::simple(reference, mailbox))?;
+        let response = self.receive::<ListResponse>()?;
+        response.is_err()?;
+        Ok(response.inner.iter().map(|x| x.name).collect())
     }
 
     fn send<T: Command>(&mut self, command: T) -> ImapResult<()> {
@@ -76,6 +78,9 @@ impl ImapClient {
         let mut reader = BufReader::new(&mut self.stream);
         let mut buf = Vec::new();
         reader.read_until(b'\r', &mut buf)?;
+        while T::should_continue(&buf) {
+            reader.read_until(b'\r', &mut buf)?;
+        }
         let s = str::from_utf8(&buf).unwrap();
         info!("Received: {}", s);
         Ok(T::convert(s))

@@ -1,3 +1,4 @@
+use nom::Err;
 use openssl::{error::ErrorStack, ssl::HandshakeError};
 use std::{borrow::Cow, fmt::Display, io, net::TcpStream};
 
@@ -11,6 +12,7 @@ pub enum ImapError {
     SslError(ErrorStack),
     HandshakeError(HandshakeError<TcpStream>),
     IOError(io::Error),
+    ParseError,
 }
 
 impl Display for ImapError {
@@ -24,6 +26,7 @@ impl Display for ImapError {
             Self::HandshakeError(e) => Cow::Owned(format!("Handshake error: {}", e)),
             Self::SslError(e) => Cow::Owned(format!("SSL Error: {}", e)),
             Self::IOError(e) => Cow::Owned(format!("IO Error: {}", e)),
+            Self::ParseError => Cow::Borrowed("Parsing failure"),
         };
         f.write_str(&s)
     }
@@ -44,6 +47,12 @@ impl From<ErrorStack> for ImapError {
 impl From<io::Error> for ImapError {
     fn from(e: io::Error) -> Self {
         Self::IOError(e)
+    }
+}
+
+impl<E> From<Err<E>> for ImapError {
+    fn from(e: Err<E>) -> Self {
+        Self::ParseError
     }
 }
 

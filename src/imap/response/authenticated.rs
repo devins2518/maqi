@@ -4,24 +4,50 @@ use super::{
     scanner::{Scan, Scanner},
     Response,
 };
-use crate::imap::{error::ImapResult, tag::Tag};
+use crate::imap::{
+    error::{ImapError, ImapResult},
+    tag::Tag,
+};
 
-pub struct ListReponse {
-    tag: Tag,
-    inner: Vec<ListInner>,
-    response: ImapResponse,
+pub struct ListResponse {
+    tag: Option<Tag>,
+    pub inner: Vec<ListInner>,
+    response: Option<ImapResponse>,
+}
+
+impl Response for ListResponse {
+    fn is_err(&self) -> ImapResult<()> {
+        // ListInners should always have an untagged response
+        unimplemented!()
+    }
+
+    fn should_continue(v: &[u8]) -> bool {
+        // if let Some('*') =
+        unimplemented!()
+    }
+}
+
+impl Scan for ListResponse {
+    fn scan(s: &str, scanner: Scanner) -> Result<Self, ImapError> {
+        let inner: Vec<ListInner> = s
+            .lines()
+            // TODO!!!!: peekable_map_while
+            .map_while(|x| ListInner::scan(x, Scanner).ok())
+            .collect();
+        unimplemented!()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ListInner {
     flags: Vec<Flags>,
-    hierarchy_delim: String,
-    name: String,
+    pub hierarchy_delim: String,
+    pub name: String,
 }
 
 impl Scan for ListInner {
-    fn scan(s: &str, scanner: Scanner) -> Self {
-        let (rest, _) = scanner.scan_tag(s).unwrap();
+    fn scan(s: &str, scanner: Scanner) -> Result<Self, ImapError> {
+        let (rest, _) = scanner.scan_untagged(s)?;
         let (rest, _) = scanner.scan_word(rest, "LIST").unwrap();
         println!("'{}'", rest);
         let (rest, flags) = scanner.scan_flags(rest).unwrap();
@@ -29,24 +55,19 @@ impl Scan for ListInner {
         let (rest, hierarchy_delim) = scanner.scan_quotes(rest).unwrap();
         let (name, _) = scanner.scan_space(rest).unwrap();
 
-        Self {
+        Ok(Self {
             flags,
             hierarchy_delim: hierarchy_delim.to_string(),
             name: name.to_string(),
-        }
-    }
-}
-
-impl Response for ListInner {
-    fn is_err(&self) -> ImapResult<()> {
-        // ListInners should always have an untagged response
-        Ok(())
+        })
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{super::flags::Flags, super::Response, ListInner};
+    use crate::imap::response::{Scan, Scanner};
+
+    use super::{super::flags::Flags, ListInner};
 
     #[test]
     fn test_list_inner() {
@@ -74,7 +95,7 @@ mod test {
         ];
 
         for (test, parsed) in test.into_iter().zip(parsed.into_iter()) {
-            assert_eq!(ListInner::convert(test), parsed)
+            assert_eq!(ListInner::scan(test, Scanner).unwrap(), parsed)
         }
     }
 }

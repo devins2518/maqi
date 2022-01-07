@@ -15,11 +15,11 @@ pub struct LoginResponse {
 }
 
 impl Scan for LoginResponse {
-    fn scan(s: &str, scanner: Scanner) -> Self {
-        let (rest, tag) = scanner.scan_tag(s).unwrap();
-        let (rest, response) = scanner.scan_response(rest).unwrap();
+    fn scan(s: &str, scanner: Scanner) -> Result<Self, ImapError> {
+        let (rest, tag) = scanner.scan_tag(s)?;
+        let (rest, response) = scanner.scan_response(rest)?;
 
-        Self { tag, response }
+        Ok(Self { tag, response })
     }
 }
 

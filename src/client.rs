@@ -1,5 +1,5 @@
 use crate::{
-    imap::{command::List, error::ImapError, ImapClient},
+    imap::{error::ImapError, ImapClient},
     utils::Provider,
 };
 use std::{error, fmt::Display, io};
@@ -42,7 +42,7 @@ impl EmailClient {
     }
 
     pub fn mailboxes(&mut self) -> Result<Vec<String>, Error> {
-        Ok(self.imap[self.index - 1].list(List::simple("", "*"))?)
+        Ok(self.imap[self.index - 1].list("", "*")?)
     }
 
     fn inc(&mut self) {
