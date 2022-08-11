@@ -1,4 +1,4 @@
-# maqi
+# Maqi
 
 A tui email client built with simplicity in mind. Aerc, mutt, and neomutt are all great email
 clients, but they're far too complicated for end users without PhDs in E-Mail RFCs. With maqi, the user
