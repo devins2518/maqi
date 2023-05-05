@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib.zig");
 
 pub fn main() anyerror!void {
-    // Note that info level log messages are by default printed only in Debug
-    // and ReleaseSafe build modes.
-    std.log.info("All your codebase are belong to us.", .{});
+    const client = try lib.ImapClient.init();
+    _ = client;
+    while (true) {}
 }

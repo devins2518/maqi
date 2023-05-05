@@ -1,14 +1,17 @@
 const std = @import("std");
+const pkgs = @import("deps.zig").pkgs;
 
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
     const lib = b.addStaticLibrary("libmaqi", "src/lib.zig");
+    pkgs.addAllTo(lib);
     lib.setTarget(target);
     lib.setBuildMode(mode);
 
     const exe = b.addExecutable("maqi", "src/main.zig");
+    pkgs.addAllTo(exe);
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.install();
@@ -23,6 +26,7 @@ pub fn build(b: *std.build.Builder) void {
     run_step.dependOn(&run_cmd.step);
 
     const lib_tests = b.addTest("src/lib.zig");
+    pkgs.addAllTo(lib_tests);
     lib_tests.setTarget(target);
     lib_tests.setBuildMode(mode);
 

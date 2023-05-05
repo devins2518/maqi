@@ -1,0 +1,4 @@
+deps:
+  parzer:
+    local: ../parzer
+    root: src/main.zig
